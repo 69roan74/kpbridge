@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>KPBridge - FAQ</title>
+    <style>
+        /* (기존 스타일과 동일, 생략 가능하지만 안전하게 전체 복붙하세요) */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; padding: 60px 20px; }
+        h1 { text-align: center; color: #333; margin-bottom: 40px; }
+        .faq-list { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .faq-item { border-bottom: 1px solid #eee; }
+        .faq-question { padding: 25px; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; justify-content: space-between; }
+        .faq-question:hover { background: #f8f9fa; }
+        .faq-answer { display: none; padding: 0 25px 25px; color: #666; background: #fcfcfc; line-height: 1.6; }
+        .btn-home { display: block; width: 200px; margin: 40px auto; text-align: center; background: #007bff; color: white; padding: 15px; border-radius: 50px; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>자주 묻는 질문 (FAQ)</h1>
+        
+        <div class="faq-list">
+            <div class="faq-item" th:each="faq : ${faqs}">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span th:text="${faq.question}">질문 내용</span>
+                    <span style="color:#007bff;">▼</span>
+                </div>
+                <div class="faq-answer">
+                    <p th:text="${faq.answer}">답변 내용</p>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(faqs)}" style="padding:40px; text-align:center; color:#999;">
+                등록된 질문이 없습니다.
+            </div>
+        </div>
+
+        <a th:href="@{/}" class="btn-home">메인으로 돌아가기</a>
+    </div>
+
+    <script>
+        function toggleFaq(el) {
+            const answer = el.nextElementSibling;
+            const isHidden = answer.style.display === 'none' || answer.style.display === '';
+            if (isHidden) {
+                answer.style.display = 'block';
+                el.querySelector('span').innerText = '▲';
+            } else {
+                answer.style.display = 'none';
+                el.querySelector('span').innerText = '▼';
+            }
+        }
+    </script>
+</body>
+</html>

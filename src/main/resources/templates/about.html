@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>KPBridge - 서비스 소개</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; color: #333; line-height: 1.6; }
+        
+        /* 네비게이션 */
+        .navbar { background-color: #ffffff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .logo { font-size: 24px; font-weight: bold; color: #007bff; text-decoration: none; }
+        
+        /* 컨테이너 */
+        .container { max-width: 900px; margin: 0 auto; padding: 60px 20px; }
+        
+        /* 섹션 스타일 */
+        .section-title { font-size: 32px; font-weight: 800; color: #333; margin-bottom: 20px; border-bottom: 2px solid #007bff; display: inline-block; padding-bottom: 10px; }
+        .content-box { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 40px; }
+        
+        .highlight { color: #007bff; font-weight: bold; }
+        .sub-title { font-size: 20px; font-weight: 700; margin-top: 30px; margin-bottom: 15px; color: #444; }
+        
+        /* 원인 분석 그리드 */
+        .cause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .cause-card { background: #f8f9fa; padding: 25px; border-radius: 10px; border-left: 5px solid #007bff; }
+        .cause-card h4 { margin: 0 0 10px 0; color: #007bff; }
+
+        .btn-home { display: inline-block; background: #007bff; color: white; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; transition: background 0.3s; margin-top: 20px; }
+        .btn-home:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a th:href="@{/}" class="logo">KPBridge</a>
+        <div>
+            <a th:href="@{/}" style="text-decoration: none; color: #666; font-weight: 600;">메인으로 돌아가기</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="content-box">
+            <h1 class="section-title">김치 프리미엄이란?</h1>
+            <p style="font-size: 18px; margin-top: 20px;">
+                한국에서 거래되는 암호화폐의 시세가 해외 거래소 시세와 비교해 <span class="highlight">얼마나 높은가</span>를 뜻하는 단어입니다.
+            </p>
+            <p>
+                해외 거래소보다 높을 경우 <strong>"김치 프리미엄(Kimchi Premium)이 끼어 있다"</strong>라고 하며, 반대로 낮을 경우 "역(逆)프리미엄"이라고 표현합니다.
+                본래 암호화폐에서 시작된 용어이나, 현재는 국내 자산 가격이 해외보다 높게 형성되는 현상을 통칭하기도 합니다.
+            </p>
+        </div>
+
+        <div class="content-box">
+            <h2 class="section-title">상세 배경</h2>
+            <p>
+                2017년 전 세계적인 암호화폐 붐과 함께 등장한 신조어입니다. 초기에는 '땡글', '디시인사이드 비트코인 갤러리' 등 커뮤니티에서 <strong>'김프'</strong>라는 약어로 불리며 시작되었습니다.
+            </p>
+            <p>
+                이후 2018년 정부의 가상화폐 규제 언급과 함께 대중적으로 널리 알려졌으며, 일본인이 한국에서 비트코인을 매도해 금괴를 밀반출하는 등 프리미엄을 노린 사건들이 발생하기도 했습니다.
+            </p>
+        </div>
+
+        <div class="content-box">
+            <h2 class="section-title">발생 원인</h2>
+            <p>
+                가장 큰 원인은 <strong>"높은 국내 수요"</strong>와 <strong>"차단된 재정거래(Arbitrage)"</strong>의 불균형 때문입니다.
+            </p>
+
+            <div class="cause-grid">
+                <div class="cause-card">
+                    <h4>📈 수요 측면</h4>
+                    <ul>
+                        <li><strong>개인 자금 유입:</strong> 2017년 이후 급등장에서 개인 투자자들의 자금이 대거 유입되었습니다.</li>
+                        <li><strong>투기 세력:</strong> 과거 규제가 심했던 중국 등 해외 자금이 한국으로 유입되기도 했습니다.</li>
+                    </ul>
+                </div>
+                <div class="cause-card">
+                    <h4>📉 공급/구조 측면</h4>
+                    <ul>
+                        <li><strong>재정거래 불가:</strong> 외국환거래법 등으로 인해 해외에서 싸게 사서 국내로 들여오는 것이 사실상 불가능합니다.</li>
+                        <li><strong>채굴업자 부족:</strong> 비싼 산업용 전기세로 인해 국내 자체 코인 공급량이 절대적으로 부족합니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 60px;">
+            <h3 style="font-size: 24px; margin-bottom: 20px;">KPBridge는 이 격차를 실시간으로 분석합니다</h3>
+            <p style="color: #666; margin-bottom: 30px;">
+                국내(Upbit, Bithumb)와 해외(Binance, OKX)의 가격 차이를<br>
+                2초 단위로 추적하여 여러분께 정확한 시장 데이터를 제공합니다.
+            </p>
+            <a th:href="@{/}" class="btn-home">실시간 시세 확인하러 가기</a>
+        </div>
+
+        <p style="text-align: center; color: #999; font-size: 12px; margin-top: 50px;">
+            내용 출처: 나무위키 (김치 프리미엄 문서) 재구성
+        </p>
+
+    </div>
+    
+    <footer style="background-color: #f9f9f9; color: #666; padding: 40px 0; margin-top: 60px; border-top: 1px solid #eaeaea; text-align: center; font-size: 13px;">
+        <p>© 2026 KPBridge. All rights reserved.</p>
+    </footer>
+</body>
+</html>

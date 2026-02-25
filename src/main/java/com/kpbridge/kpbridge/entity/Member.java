@@ -1,0 +1,41 @@
+package com.kpbridge.kpbridge.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "MEMBER")
+@Getter @Setter
+@NoArgsConstructor
+public class Member {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String userId;
+
+    @Column(nullable = false)
+    private String password;
+
+    private String userName;
+    private String phone;
+    private String email;
+    private String birthDate;
+
+    @Column(nullable = true)
+    private String referralCode;
+
+    private String referralAppliedYn = "N";
+
+    // ★ [수정됨] 기본값을 "ROLE_USER" -> "USER"로 변경! (깔끔하게)
+    private String role = "USER";
+
+    @Column(precision = 18, scale = 8)
+    private BigDecimal myCoinBalance = BigDecimal.ZERO;
+
+    private LocalDateTime joinDate = LocalDateTime.now();
+}

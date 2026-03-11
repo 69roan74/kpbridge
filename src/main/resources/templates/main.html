@@ -48,15 +48,22 @@
 
         /* [3. 시세 테이블] */
         .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .filter-tabs { display: flex; gap: 5px; }
-        .tab-btn { padding: 8px 16px; border-radius: 30px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: 600; color: #666; font-size: 14px; }
-        .tab-btn.active { background: #007bff; color: white; border-color: #007bff; }
-        
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         .coin-table { width: 100%; background: white; border-collapse: collapse; min-width: 600px; }
         .coin-table th { background: #f8f9fa; padding: 15px; text-align: left; color: #6c757d; font-size: 12px; white-space: nowrap; }
+        .coin-table th.num { text-align: right; }
         .coin-table td { padding: 15px; border-bottom: 1px solid #f1f3f5; font-size: 15px; vertical-align: middle; }
-        .ex-logo { width: 20px; height: 20px; vertical-align: middle; margin-right: 5px; border-radius: 50%; object-fit: contain; }
+        .coin-table td.num { text-align: right; }
+        .coin-table tbody tr:hover { background: #f8f9fa; }
+        .coin-name-cell { display: flex; align-items: center; gap: 10px; }
+        .coin-icon { width: 28px; height: 28px; border-radius: 50%; }
+        .coin-name-text .name { font-weight: 700; font-size: 15px; color: #333; display: block; }
+        .coin-name-text .ticker { font-size: 12px; color: #999; }
+        .change-cell { display: flex; flex-direction: column; align-items: flex-end; }
+        .change-cell .rate { font-weight: 700; font-size: 14px; }
+        .change-cell .amount { font-size: 12px; color: #888; }
+        .color-red { color: #f82b60; }
+        .color-blue { color: #0062ff; }
 
         /* [4. FAQ 슬라이드] */
         .faq-section {
@@ -180,42 +187,22 @@
 
         <div class="table-header">
             <h2 style="font-size: 18px; color: #333; margin: 0; font-weight: 800;">실시간 시세</h2>
-            <div class="filter-tabs">
-                <button class="tab-btn active" onclick="filterEx('all')">전체</button>
-                <button class="tab-btn" onclick="filterEx('local')">국내</button>
-                <button class="tab-btn" onclick="filterEx('global')">해외</button>
-            </div>
+            <span id="exchange-rate-display" style="font-size: 13px; color: #888;">환율(USDT): -</span>
         </div>
-        
+
         <div class="table-container">
             <table class="coin-table">
                 <thead>
                     <tr>
-                        <th>자산 (Asset)</th>
-                        <th class="col-upbit"><img src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com" class="ex-logo">Upbit</th>
-                        <th class="col-bithumb"><img src="https://www.google.com/s2/favicons?sz=64&domain=bithumb.com" class="ex-logo">Bithumb</th>
-                        <th class="col-binance"><img src="https://www.google.com/s2/favicons?sz=64&domain=binance.com" class="ex-logo">Binance</th>
-                        <th class="col-okx"><img src="https://www.google.com/s2/favicons?sz=64&domain=okx.com" class="ex-logo">OKX</th>
-                        <th>차익 (Gap)</th>
+                        <th>이름</th>
+                        <th class="num">현재가</th>
+                        <th class="num">김프</th>
+                        <th class="num">전일대비</th>
+                        <th class="num">거래대금(24H)</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td><img src="https://s2.coinmarketcap.com/static/img/coins/64x64/1.png" class="ex-logo"><b>BTC</b></td>
-                        <td id="btc-upbit" class="col-upbit">-</td>
-                        <td id="btc-bithumb" class="col-bithumb">-</td>
-                        <td id="btc-binance" class="col-binance">-</td>
-                        <td id="btc-okx" class="col-okx">-</td>
-                        <td id="btc-profit">-</td>
-                    </tr>
-                    <tr>
-                        <td><img src="https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png" class="ex-logo"><b>ETH</b></td>
-                        <td id="eth-upbit" class="col-upbit">-</td>
-                        <td id="eth-bithumb" class="col-bithumb">-</td>
-                        <td id="eth-binance" class="col-binance">-</td>
-                        <td id="eth-okx" class="col-okx">-</td>
-                        <td id="eth-profit">-</td>
-                    </tr>
+                <tbody id="coin-table-body">
+                    <tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">시세 로딩 중...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -372,47 +359,59 @@
         });
     }
 
-    let currentRate = 1420;
     function updatePrices() {
         fetch('/api/prices').then(res => res.json()).then(data => {
-            const fmt = (n) => n ? Math.round(n).toLocaleString() : '-';
-            const prices = {
-                btc: { up: data.btcUpbit, bit: data.btcBithumb, bin: data.btcBinance, okx: data.btcOkx },
-                eth: { up: data.ethUpbit, bit: data.ethBithumb, bin: data.ethBinance, okx: data.ethOkx }
-            };
-            ['btc', 'eth'].forEach(key => {
-                const p = prices[key];
-                const binKrw = p.bin * currentRate;
-                const okxKrw = p.okx * currentRate;
-                
-                updateCell(key + '-upbit', p.up);
-                updateCell(key + '-bithumb', p.bit);
-                document.getElementById(key + '-binance').innerText = p.bin ? fmt(binKrw) : "지역제한";
-                updateCell(key + '-okx', okxKrw);
-                
-                const gap = p.up - binKrw;
-                const profitEl = document.getElementById(key + '-profit');
-                if(p.up && p.bin) {
-                    profitEl.innerText = (gap > 0 ? "+" : "") + fmt(gap) + " KRW";
-                    profitEl.style.color = gap > 0 ? '#f82b60' : '#0062ff';
-                }
+            const tbody = document.getElementById('coin-table-body');
+            const rateDisplay = document.getElementById('exchange-rate-display');
+
+            if (data.exchangeRate) {
+                rateDisplay.innerText = '환율(USDT): ' + Math.round(data.exchangeRate).toLocaleString() + ' KRW';
+            }
+
+            if (!data.coins || data.coins.length === 0) return;
+
+            let html = '';
+            data.coins.forEach(coin => {
+                const price = Math.round(coin.currentPrice).toLocaleString();
+                const premium = coin.kimchiPremium.toFixed(2);
+                const premiumClass = coin.kimchiPremium > 0 ? 'color-red' : (coin.kimchiPremium < 0 ? 'color-blue' : '');
+                const premiumSign = coin.kimchiPremium > 0 ? '+' : '';
+                const premiumText = coin.symbol === 'USDT' ? '-' : premiumSign + premium + '%';
+
+                const changePercent = (coin.changeRate * 100).toFixed(2);
+                const changeAmt = Math.round(coin.changePrice).toLocaleString();
+                const changeClass = coin.changeRate > 0 ? 'color-red' : (coin.changeRate < 0 ? 'color-blue' : '');
+                const changeSign = coin.changeRate > 0 ? '+' : '';
+
+                const volumeEok = (coin.tradeVolume / 100000000).toFixed(0);
+                const volumeFormatted = Number(volumeEok).toLocaleString() + '억';
+
+                html += '<tr>' +
+                    '<td><div class="coin-name-cell">' +
+                        '<img src="' + coin.iconUrl + '" class="coin-icon">' +
+                        '<div class="coin-name-text">' +
+                            '<span class="name">' + coin.name + '</span>' +
+                            '<span class="ticker">' + coin.symbol + '</span>' +
+                        '</div>' +
+                    '</div></td>' +
+                    '<td class="num" style="font-weight:700;">' + price + '</td>' +
+                    '<td class="num ' + premiumClass + '" style="font-weight:700;">' + premiumText + '</td>' +
+                    '<td class="num"><div class="change-cell">' +
+                        '<span class="rate ' + changeClass + '">' + changeSign + changePercent + '%</span>' +
+                        '<span class="amount ' + changeClass + '">' + changeSign + changeAmt + '</span>' +
+                    '</div></td>' +
+                    '<td class="num" style="color:#555;">' + volumeFormatted + '</td>' +
+                '</tr>';
             });
+            tbody.innerHTML = html;
+        }).catch(err => {
+            console.error('Price fetch failed:', err);
         });
     }
-    function updateCell(id, val) { const el = document.getElementById(id); if(val) el.innerText = Math.round(val).toLocaleString(); }
-    function filterEx(type) {
-        const l = document.querySelectorAll('.col-upbit, .col-bithumb');
-        const g = document.querySelectorAll('.col-binance, .col-okx');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        if(type==='local') { l.forEach(e=>e.style.display=''); g.forEach(e=>e.style.display='none'); }
-        else if(type==='global') { l.forEach(e=>e.style.display='none'); g.forEach(e=>e.style.display=''); }
-        else { l.forEach(e=>e.style.display=''); g.forEach(e=>e.style.display=''); }
-    }
+
     function openTradeModal() { document.getElementById('tradeModal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    
-    // 시세 갱신 시작
+
     setInterval(updatePrices, 2000);
     updatePrices();
 </script>

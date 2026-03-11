@@ -49,7 +49,7 @@
         /* [3. 시세 테이블] */
         .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-        .coin-table { width: 100%; background: white; border-collapse: collapse; min-width: 600px; }
+        .coin-table { width: 100%; background: white; border-collapse: collapse; }
         .coin-table th { background: #f8f9fa; padding: 15px; text-align: left; color: #6c757d; font-size: 12px; white-space: nowrap; }
         .coin-table th.num { text-align: right; }
         .coin-table td { padding: 15px; border-bottom: 1px solid #f1f3f5; font-size: 15px; vertical-align: middle; }
@@ -61,10 +61,33 @@
         .coin-name-text .ticker { font-size: 12px; color: #999; }
         .color-red { color: #f82b60; }
         .color-blue { color: #0062ff; }
-        .exchange-selectors { display: flex; gap: 12px; align-items: center; }
+        .exchange-selectors { display: flex; gap: 10px; align-items: center; }
         .selector-group { display: flex; align-items: center; gap: 6px; }
         .selector-group label { font-size: 12px; color: #888; white-space: nowrap; font-weight: 600; }
-        .selector-group select { padding: 7px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-weight: 600; background: white; cursor: pointer; color: #333; }
+        .ex-dropdown { position: relative; user-select: none; }
+        .ex-dropdown-btn {
+            display: flex; align-items: center; gap: 8px; padding: 7px 14px;
+            background: white; border: 1px solid #e9ecef; border-radius: 20px;
+            cursor: pointer; font-size: 13px; font-weight: 600; color: #333;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: all 0.2s;
+        }
+        .ex-dropdown-btn:hover { border-color: #007bff; box-shadow: 0 2px 8px rgba(0,123,255,0.12); }
+        .ex-dropdown-btn img { width: 18px; height: 18px; border-radius: 50%; }
+        .ex-dropdown-btn .arrow { font-size: 10px; color: #aaa; margin-left: 2px; transition: transform 0.2s; }
+        .ex-dropdown.open .arrow { transform: rotate(180deg); }
+        .ex-dropdown-list {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%;
+            background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border: 1px solid #e9ecef; z-index: 100; overflow: hidden;
+        }
+        .ex-dropdown.open .ex-dropdown-list { display: block; }
+        .ex-dropdown-item {
+            display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+            cursor: pointer; font-size: 13px; font-weight: 500; color: #333; white-space: nowrap;
+        }
+        .ex-dropdown-item:hover { background: #f0f6ff; }
+        .ex-dropdown-item.active { background: #e7f1ff; color: #007bff; font-weight: 700; }
+        .ex-dropdown-item img { width: 18px; height: 18px; border-radius: 50%; }
 
         /* [4. FAQ 슬라이드] */
         .faq-section {
@@ -129,6 +152,18 @@
             .footer-right a { margin-left: 0; margin-right: 15px; }
             .my-wallet h1 { font-size: 36px; }
             .floating-trade-btn { bottom: 30px; right: 20px; }
+            .table-header { flex-direction: column; align-items: flex-start; }
+            .exchange-selectors { flex-wrap: wrap; }
+            .coin-table th, .coin-table td { padding: 10px 8px; font-size: 13px; white-space: nowrap; }
+            .coin-table th:first-child, .coin-table td:first-child {
+                position: sticky; left: 0; background: white; z-index: 1;
+                box-shadow: 2px 0 4px rgba(0,0,0,0.04);
+            }
+            .coin-table th:first-child { background: #f8f9fa; }
+            .coin-icon { width: 22px; height: 22px; }
+            .coin-name-cell { gap: 6px; }
+            .coin-name-text .name { font-size: 13px; }
+            .coin-name-text .ticker { font-size: 10px; }
         }
     </style>
 </head>
@@ -189,21 +224,45 @@
         <div class="table-header">
             <h2 style="font-size: 18px; color: #333; margin: 0; font-weight: 800;">실시간 시세</h2>
             <div class="exchange-selectors">
-                <span id="exchange-rate-display" style="font-size: 12px; color: #999; margin-right: 8px;">환율: -</span>
+                <span id="exchange-rate-display" style="font-size: 12px; color: #999; margin-right: 4px;">환율: -</span>
                 <div class="selector-group">
                     <label>국내</label>
-                    <select id="domestic-exchange">
-                        <option value="upbit">업비트</option>
-                        <option value="bithumb">빗썸</option>
-                    </select>
+                    <div class="ex-dropdown" id="domestic-dropdown" data-value="upbit">
+                        <div class="ex-dropdown-btn" onclick="toggleDropdown('domestic-dropdown')">
+                            <img src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com">
+                            <span class="ex-label">업비트</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="ex-dropdown-list">
+                            <div class="ex-dropdown-item active" data-value="upbit" onclick="selectExchange('domestic-dropdown', this)">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com"> 업비트
+                            </div>
+                            <div class="ex-dropdown-item" data-value="bithumb" onclick="selectExchange('domestic-dropdown', this)">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=bithumb.com"> 빗썸
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="selector-group">
                     <label>해외</label>
-                    <select id="foreign-exchange">
-                        <option value="okx">OKX</option>
-                        <option value="htx">HTX</option>
-                        <option value="gate">게이트</option>
-                    </select>
+                    <div class="ex-dropdown" id="foreign-dropdown" data-value="okx">
+                        <div class="ex-dropdown-btn" onclick="toggleDropdown('foreign-dropdown')">
+                            <img src="https://www.google.com/s2/favicons?sz=64&domain=okx.com">
+                            <span class="ex-label">OKX</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="ex-dropdown-list">
+                            <div class="ex-dropdown-item active" data-value="okx" onclick="selectExchange('foreign-dropdown', this)">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=okx.com"> OKX
+                            </div>
+                            <div class="ex-dropdown-item" data-value="htx" onclick="selectExchange('foreign-dropdown', this)">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=htx.com"> HTX
+                            </div>
+                            <div class="ex-dropdown-item" data-value="gate" onclick="selectExchange('foreign-dropdown', this)">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=gate.io"> 게이트
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -377,9 +436,31 @@
         });
     }
 
+    function toggleDropdown(id) {
+        const dd = document.getElementById(id);
+        document.querySelectorAll('.ex-dropdown.open').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+        dd.classList.toggle('open');
+    }
+    function selectExchange(dropdownId, item) {
+        const dd = document.getElementById(dropdownId);
+        dd.dataset.value = item.dataset.value;
+        const btn = dd.querySelector('.ex-dropdown-btn');
+        btn.querySelector('img').src = item.querySelector('img').src;
+        btn.querySelector('.ex-label').textContent = item.textContent.trim();
+        dd.querySelectorAll('.ex-dropdown-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        dd.classList.remove('open');
+        updatePrices();
+    }
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.ex-dropdown')) {
+            document.querySelectorAll('.ex-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+    });
+
     function updatePrices() {
-        const domestic = document.getElementById('domestic-exchange').value;
-        const foreign = document.getElementById('foreign-exchange').value;
+        const domestic = document.getElementById('domestic-dropdown').dataset.value;
+        const foreign = document.getElementById('foreign-dropdown').dataset.value;
         fetch('/api/prices?domestic=' + domestic + '&foreign=' + foreign).then(res => res.json()).then(data => {
             const tbody = document.getElementById('coin-table-body');
             const rateDisplay = document.getElementById('exchange-rate-display');
@@ -424,8 +505,6 @@
     function openTradeModal() { document.getElementById('tradeModal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    document.getElementById('domestic-exchange').addEventListener('change', updatePrices);
-    document.getElementById('foreign-exchange').addEventListener('change', updatePrices);
     setInterval(updatePrices, 2000);
     updatePrices();
 </script>

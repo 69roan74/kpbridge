@@ -59,11 +59,12 @@
         .coin-icon { width: 28px; height: 28px; border-radius: 50%; }
         .coin-name-text .name { font-weight: 700; font-size: 15px; color: #333; display: block; }
         .coin-name-text .ticker { font-size: 12px; color: #999; }
-        .change-cell { display: flex; flex-direction: column; align-items: flex-end; }
-        .change-cell .rate { font-weight: 700; font-size: 14px; }
-        .change-cell .amount { font-size: 12px; color: #888; }
         .color-red { color: #f82b60; }
         .color-blue { color: #0062ff; }
+        .exchange-selectors { display: flex; gap: 12px; align-items: center; }
+        .selector-group { display: flex; align-items: center; gap: 6px; }
+        .selector-group label { font-size: 12px; color: #888; white-space: nowrap; font-weight: 600; }
+        .selector-group select { padding: 7px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-weight: 600; background: white; cursor: pointer; color: #333; }
 
         /* [4. FAQ 슬라이드] */
         .faq-section {
@@ -187,7 +188,24 @@
 
         <div class="table-header">
             <h2 style="font-size: 18px; color: #333; margin: 0; font-weight: 800;">실시간 시세</h2>
-            <span id="exchange-rate-display" style="font-size: 13px; color: #888;">환율(USDT): -</span>
+            <div class="exchange-selectors">
+                <span id="exchange-rate-display" style="font-size: 12px; color: #999; margin-right: 8px;">환율: -</span>
+                <div class="selector-group">
+                    <label>국내</label>
+                    <select id="domestic-exchange">
+                        <option value="upbit">업비트</option>
+                        <option value="bithumb">빗썸</option>
+                    </select>
+                </div>
+                <div class="selector-group">
+                    <label>해외</label>
+                    <select id="foreign-exchange">
+                        <option value="okx">OKX</option>
+                        <option value="htx">HTX</option>
+                        <option value="gate">게이트</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="table-container">
@@ -197,8 +215,8 @@
                         <th>이름</th>
                         <th class="num">현재가</th>
                         <th class="num">김프</th>
-                        <th class="num">전일대비</th>
-                        <th class="num">거래대금(24H)</th>
+                        <th class="num">매수가격</th>
+                        <th class="num">매도가격</th>
                     </tr>
                 </thead>
                 <tbody id="coin-table-body">
@@ -360,7 +378,9 @@
     }
 
     function updatePrices() {
-        fetch('/api/prices').then(res => res.json()).then(data => {
+        const domestic = document.getElementById('domestic-exchange').value;
+        const foreign = document.getElementById('foreign-exchange').value;
+        fetch('/api/prices?domestic=' + domestic + '&foreign=' + foreign).then(res => res.json()).then(data => {
             const tbody = document.getElementById('coin-table-body');
             const rateDisplay = document.getElementById('exchange-rate-display');
 
@@ -378,13 +398,8 @@
                 const premiumSign = coin.kimchiPremium > 0 ? '+' : '';
                 const premiumText = coin.symbol === 'USDT' ? '-' : premiumSign + premium + '%';
 
-                const changePercent = (coin.changeRate * 100).toFixed(2);
-                const changeAmt = Math.round(coin.changePrice).toLocaleString();
-                const changeClass = coin.changeRate > 0 ? 'color-red' : (coin.changeRate < 0 ? 'color-blue' : '');
-                const changeSign = coin.changeRate > 0 ? '+' : '';
-
-                const volumeEok = (coin.tradeVolume / 100000000).toFixed(0);
-                const volumeFormatted = Number(volumeEok).toLocaleString() + '억';
+                const buyUsdt = coin.buyPriceUsdt > 0 ? coin.buyPriceUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
+                const sellUsdt = coin.sellPriceUsdt > 0 ? coin.sellPriceUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
 
                 html += '<tr>' +
                     '<td><div class="coin-name-cell">' +
@@ -396,11 +411,8 @@
                     '</div></td>' +
                     '<td class="num" style="font-weight:700;">' + price + '</td>' +
                     '<td class="num ' + premiumClass + '" style="font-weight:700;">' + premiumText + '</td>' +
-                    '<td class="num"><div class="change-cell">' +
-                        '<span class="rate ' + changeClass + '">' + changeSign + changePercent + '%</span>' +
-                        '<span class="amount ' + changeClass + '">' + changeSign + changeAmt + '</span>' +
-                    '</div></td>' +
-                    '<td class="num" style="color:#555;">' + volumeFormatted + '</td>' +
+                    '<td class="num" style="font-weight:600; color:#555;">' + buyUsdt + '</td>' +
+                    '<td class="num ' + premiumClass + '" style="font-weight:600;">' + sellUsdt + '</td>' +
                 '</tr>';
             });
             tbody.innerHTML = html;
@@ -412,6 +424,8 @@
     function openTradeModal() { document.getElementById('tradeModal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+    document.getElementById('domestic-exchange').addEventListener('change', updatePrices);
+    document.getElementById('foreign-exchange').addEventListener('change', updatePrices);
     setInterval(updatePrices, 2000);
     updatePrices();
 </script>

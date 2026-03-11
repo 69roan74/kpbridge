@@ -11,7 +11,6 @@ public class CoinPriceDto {
     private String iconUrl;
     private double currentPrice;
     private double kimchiPremium;
-    private double changeRate;
-    private double changePrice;
-    private double tradeVolume;
+    private double buyPriceUsdt;
+    private double sellPriceUsdt;
 }

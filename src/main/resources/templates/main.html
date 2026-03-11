@@ -187,6 +187,8 @@
             <th:block th:if="${user != null}">
                 <span th:text="${user.userName} + '님'" style="font-weight: 600; margin-right: 10px;"></span>
                 <span style="color: #ddd;">|</span>
+                <a th:if="${user.role == 'ADMIN'}" th:href="@{/admin}" style="color: #f82b60; font-weight: bold; text-decoration: none; margin: 0 10px;">👑 관리자</a>
+                <span th:if="${user.role == 'ADMIN'}" style="color: #ddd;">|</span>
                 <a th:href="@{/mypage}" style="color: #007bff; font-weight: bold; text-decoration: none; margin: 0 10px;">마이페이지</a>
                 <span style="color: #ddd;">|</span>
                 <a href="/logout" style="color: #666; text-decoration: none; margin-left: 10px;">로그아웃</a>

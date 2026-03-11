@@ -88,6 +88,19 @@
         .ex-dropdown-item:hover { background: #f0f6ff; }
         .ex-dropdown-item.active { background: #e7f1ff; color: #007bff; font-weight: 700; }
         .ex-dropdown-item img { width: 18px; height: 18px; border-radius: 50%; }
+        .exchange-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, #e7f1ff, #f0f6ff); border: 1px solid #c5d9f7;
+            border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 700; color: #0062ff;
+            margin-bottom: 12px; transition: all 0.3s;
+        }
+        .exchange-badge img { width: 16px; height: 16px; border-radius: 50%; }
+        .exchange-badge .badge-x { color: #aaa; font-weight: 400; margin: 0 4px; }
+        @keyframes flashUpdate {
+            0% { background-color: rgba(0, 123, 255, 0.08); }
+            100% { background-color: white; }
+        }
+        .coin-table.flash tbody tr { animation: flashUpdate 0.6s ease-out; }
 
         /* [4. FAQ 슬라이드] */
         .faq-section {
@@ -267,6 +280,13 @@
             </div>
         </div>
 
+        <div id="exchange-badge" class="exchange-badge">
+            <img src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com">
+            <span id="badge-domestic">업비트</span>
+            <span class="badge-x">×</span>
+            <img src="https://www.google.com/s2/favicons?sz=64&domain=okx.com">
+            <span id="badge-foreign">OKX</span>
+        </div>
         <div class="table-container">
             <table class="coin-table">
                 <thead>
@@ -450,7 +470,17 @@
         dd.querySelectorAll('.ex-dropdown-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
         dd.classList.remove('open');
-        updatePrices();
+        updateBadge();
+        updatePrices(true);
+    }
+    function updateBadge() {
+        const domBtn = document.querySelector('#domestic-dropdown .ex-dropdown-btn');
+        const fgnBtn = document.querySelector('#foreign-dropdown .ex-dropdown-btn');
+        const badge = document.getElementById('exchange-badge');
+        badge.querySelector('#badge-domestic').textContent = domBtn.querySelector('.ex-label').textContent;
+        badge.querySelector('#badge-foreign').textContent = fgnBtn.querySelector('.ex-label').textContent;
+        badge.querySelectorAll('img')[0].src = domBtn.querySelector('img').src;
+        badge.querySelectorAll('img')[1].src = fgnBtn.querySelector('img').src;
     }
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.ex-dropdown')) {
@@ -458,7 +488,7 @@
         }
     });
 
-    function updatePrices() {
+    function updatePrices(flash) {
         const domestic = document.getElementById('domestic-dropdown').dataset.value;
         const foreign = document.getElementById('foreign-dropdown').dataset.value;
         fetch('/api/prices?domestic=' + domestic + '&foreign=' + foreign).then(res => res.json()).then(data => {
@@ -497,6 +527,13 @@
                 '</tr>';
             });
             tbody.innerHTML = html;
+            if (flash) {
+                const table = document.querySelector('.coin-table');
+                table.classList.remove('flash');
+                void table.offsetWidth;
+                table.classList.add('flash');
+                setTimeout(() => table.classList.remove('flash'), 700);
+            }
         }).catch(err => {
             console.error('Price fetch failed:', err);
         });

@@ -1,0 +1,28 @@
+{
+  "name": "kpbridge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "KPBridge_Promo.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/69roan74/kpbridge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/69roan74/kpbridge/issues"
+  },
+  "homepage": "https://github.com/69roan74/kpbridge#readme",
+  "dependencies": {
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-icons": "^5.6.0",
+    "sharp": "^0.34.5"
+  }
+}

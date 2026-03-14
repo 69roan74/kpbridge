@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kpbridge-spring",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "start-server.bat"],
+      "port": 8080
+    }
+  ]
+}

@@ -201,8 +201,8 @@
                     </h1>
                 </th:block>
                 <th:block th:if="${user == null}">
-                    <h1 style="margin:15px 0; font-size: 28px; font-weight: 800; line-height: 1.3;">로그인하고<br>수익을 확인하세요</h1>
-                    <a href="/login" style="display: inline-block; background: white; color: #007bff; padding: 12px 40px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px;">시작하기</a>
+                    <h1 style="margin:15px 0; font-size: 28px; font-weight: 800; line-height: 1.3;"><span th:text="#{main.guest.title.line1}">로그인하고</span><br><span th:text="#{main.guest.title.line2}">수익을 확인하세요</span></h1>
+                    <a href="/login" style="display: inline-block; background: white; color: #007bff; padding: 12px 40px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px;" th:text="#{main.guest.start}">시작하기</a>
                 </th:block>
             </div>
         </div>
@@ -220,19 +220,19 @@
                         </div>
                     </th:block>
                     <th:block th:if="${user == null or #lists.isEmpty(historyList)}">
-                        <div class="ticker-item">거래 내역이 없습니다. [거래하기]를 눌러보세요!</div>
-                        <div class="ticker-item">🚀 KPBridge에 오신 것을 환영합니다.</div>
+                        <div class="ticker-item" th:text="#{main.ticker.empty}">거래 내역이 없습니다. [거래하기]를 눌러보세요!</div>
+                        <div class="ticker-item" th:text="#{main.ticker.welcome}">🚀 KPBridge에 오신 것을 환영합니다.</div>
                     </th:block>
                 </div>
             </div>
         </div>
 
         <div class="table-header">
-            <h2 style="font-size: 18px; color: #333; margin: 0; font-weight: 800;">실시간 시세</h2>
+            <h2 style="font-size: 18px; color: #333; margin: 0; font-weight: 800;" th:text="#{main.title}">실시간 시세</h2>
             <div class="exchange-selectors">
-                <span id="exchange-rate-display" style="font-size: 12px; color: #999; margin-right: 4px;">환율: -</span>
+                <span id="exchange-rate-display" style="font-size: 12px; color: #999; margin-right: 4px;" th:text="#{exchange.rate.default}">환율: -</span>
                 <div class="selector-group">
-                    <label>국내</label>
+                    <label th:text="#{main.exchange.domestic}">국내</label>
                     <div class="ex-dropdown" id="domestic-dropdown" data-value="upbit">
                         <div class="ex-dropdown-btn" onclick="toggleDropdown('domestic-dropdown')">
                             <img src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com">
@@ -250,7 +250,7 @@
                     </div>
                 </div>
                 <div class="selector-group">
-                    <label>해외</label>
+                    <label th:text="#{main.exchange.foreign}">해외</label>
                     <div class="ex-dropdown" id="foreign-dropdown" data-value="okx">
                         <div class="ex-dropdown-btn" onclick="toggleDropdown('foreign-dropdown')">
                             <img src="https://www.google.com/s2/favicons?sz=64&domain=okx.com">
@@ -277,15 +277,15 @@
             <table class="coin-table">
                 <thead>
                     <tr>
-                        <th>이름</th>
-                        <th class="num">현재가</th>
-                        <th class="num">김프</th>
-                        <th class="num">매수가격</th>
-                        <th class="num">매도가격</th>
+                        <th th:text="#{main.table.name}">이름</th>
+                        <th class="num" th:text="#{main.table.price}">현재가</th>
+                        <th class="num" th:text="#{main.table.kimchi}">김프</th>
+                        <th class="num" th:text="#{main.table.buy}">매수가격</th>
+                        <th class="num" th:text="#{main.table.sell}">매도가격</th>
                     </tr>
                 </thead>
                 <tbody id="coin-table-body">
-                    <tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">시세 로딩 중...</td></tr>
+                    <tr><td colspan="5" style="text-align:center; padding:40px; color:#999;" th:text="#{main.loading}">시세 로딩 중...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -301,22 +301,22 @@
                         <li>보안 정책 및 이용 가이드</li> -->
                     </ul>
                 </div>
-                <div style="font-size: 12px; color: #999;">더보기 ></div>
+                <div style="font-size: 12px; color: #999;" th:text="#{main.faq.more}">더보기 ></div>
             </div>
         </a>
     </div>
 
     <th:block th:if="${user != null}">
         <button class="floating-trade-btn" onclick="openTradeModal()">
-            <span class="btn-icon">⚡</span> 거래하기
+            <span class="btn-icon">⚡</span> <span th:text="#{main.trade.button}">거래하기</span>
         </button>
     </th:block>
 
     <div id="tradeModal" class="modal-overlay">
         <div class="modal-box">
-            <h2 style="margin-top: 0; color: #007bff;">💹 거래 주문서</h2>
-            
-            <label class="input-label">코인 선택</label>
+            <h2 style="margin-top: 0; color: #007bff;" th:text="#{trade.order.title}">💹 거래 주문서</h2>
+
+            <label class="input-label" th:text="#{trade.coin}">코인 선택</label>
             <div class="exchange-grid">
                 <div class="exchange-card selected" onclick="selectCoin(this, 'BTC')">
                     <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/1.png">
@@ -331,7 +331,7 @@
 
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <div style="flex: 1;">
-                    <label class="input-label">매수 (From)</label>
+                    <label class="input-label" th:text="#{trade.buy.label}">매수 (From)</label>
                     <div class="exchange-card selected" id="buyCard" onclick="toggleExchange('buy')">
                         <img id="buyImg" src="https://www.google.com/s2/favicons?sz=64&domain=binance.com">
                         <span id="buyText">Binance</span>
@@ -339,7 +339,7 @@
                 </div>
                 <div style="display: flex; align-items: center; padding-top: 25px; color: #ccc;">▶</div>
                 <div style="flex: 1;">
-                    <label class="input-label">매도 (To)</label>
+                    <label class="input-label" th:text="#{trade.sell.label}">매도 (To)</label>
                     <div class="exchange-card selected" id="sellCard" onclick="toggleExchange('sell')">
                         <img id="sellImg" src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com">
                         <span id="sellText">Upbit</span>
@@ -350,11 +350,11 @@
             <input type="hidden" id="buyEx" value="Binance">
             <input type="hidden" id="sellEx" value="Upbit">
 
-            <label class="input-label">투자 금액 (KRW)</label>
+            <label class="input-label" th:text="#{trade.amount.krw}">투자 금액 (KRW)</label>
             <input type="tel" id="tradeAmount" class="modal-input" placeholder="0" onkeyup="inputNumberFormat(this)">
 
-            <button onclick="submitTrade()" class="confirm-btn">주문 전송</button>
-            <button onclick="closeModal('tradeModal')" class="close-btn">취소</button>
+            <button onclick="submitTrade()" class="confirm-btn" th:text="#{trade.submit}">주문 전송</button>
+            <button onclick="closeModal('tradeModal')" class="close-btn" th:text="#{trade.cancel}">취소</button>
         </div>
     </div>
 
@@ -369,11 +369,11 @@
             </div>
             <div class="footer-right">
                 <a href="https://t.me/kpPrjct" target="_blank" class="telegram-link">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg"> 텔레그램 문의
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg"> <span th:text="#{footer.telegram}">텔레그램 문의</span>
                 </a>
-                <a href="/about" target="_blank">서비스 소개</a>
-                <p style="margin-top: 10px; color: #999; font-size: 12px; max-width: 400px; line-height: 1.4;">
-                    본 사이트는 암호화폐 가격 정보를 제공할 뿐 투자를 권유하지 않습니다.<br>
+                <a href="/about" target="_blank" th:text="#{footer.about}">서비스 소개</a>
+                <p style="margin-top: 10px; color: #999; font-size: 12px; max-width: 400px; line-height: 1.4;" th:text="#{footer.disclaimer}">
+                    본 사이트는 암호화폐 가격 정보를 제공할 뿐 투자를 권유하지 않습니다.
                     투자의 책임은 전적으로 본인에게 있습니다.
                 </p>
             </div>
@@ -381,6 +381,18 @@
     </footer>
 
 <script th:inline="javascript">
+    /* i18n strings from server */
+    const _i18n = {
+        errSame:    [[#{trade.error.same}]],
+        errAmount:  [[#{trade.error.amount}]],
+        confirmTitle: [[#{trade.confirm.title}]],
+        confirmProceed: [[#{trade.confirm.proceed}]],
+        successLine1: [[#{trade.success.line1}]],
+        successLine2: [[#{trade.success.line2}]],
+        errPrefix:  [[#{trade.error.prefix}]],
+        rateLabel:  [[#{exchange.rate.label}]]
+    };
+
     /* 보안용 CSRF 헤더 설정 함수 (스프링 시큐리티 대비) */
     function getCsrfHeaders() {
         const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -422,11 +434,11 @@
         const sell = document.getElementById('sellEx').value;
         const rawAmount = document.getElementById('tradeAmount').value.replace(/,/g, '');
 
-        if (buy === sell) return alert("매수처와 매도처가 같습니다! 다른 곳을 선택해주세요.");
-        if (!rawAmount || rawAmount <= 0) return alert("금액을 입력해주세요.");
+        if (buy === sell) return alert(_i18n.errSame);
+        if (!rawAmount || rawAmount <= 0) return alert(_i18n.errAmount);
 
         const route = buy + " -> " + sell;
-        if(!confirm(`[주문 확인]\n\n${coin}\n${route}\n${Number(rawAmount).toLocaleString()} KRW\n\n진행하시겠습니까?`)) return;
+        if(!confirm(`${_i18n.confirmTitle}\n\n${coin}\n${route}\n${Number(rawAmount).toLocaleString()} KRW\n\n${_i18n.confirmProceed}`)) return;
 
         fetch('/api/trans/trade', {
             method: 'POST',
@@ -434,10 +446,10 @@
             body: JSON.stringify({ coin: coin, route: route, amount: rawAmount })
         }).then(res => {
             if (res.ok) {
-                alert("✅ 주문 접수 완료!\n\n담당자에게 텔레그램 알림이 발송되었습니다.");
+                alert(_i18n.successLine1 + '\n\n' + _i18n.successLine2);
                 window.location.reload();
             } else {
-                res.text().then(msg => alert("실패: " + msg));
+                res.text().then(msg => alert(_i18n.errPrefix + ' ' + msg));
             }
         });
     }
@@ -472,7 +484,7 @@
             const rateDisplay = document.getElementById('exchange-rate-display');
 
             if (data.exchangeRate) {
-                rateDisplay.innerText = '환율(USDT): ' + Math.round(data.exchangeRate).toLocaleString() + ' KRW';
+                rateDisplay.innerText = _i18n.rateLabel + ' ' + Math.round(data.exchangeRate).toLocaleString() + ' KRW';
             }
 
             if (!data.coins || data.coins.length === 0) return;

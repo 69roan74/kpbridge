@@ -26,10 +26,16 @@ public class Member {
     private String email;
     private String birthDate;
 
-    @Column(nullable = true)
+    // 나의 추천 코드 (가입 시 자동 생성, unique)
+    @Column(unique = true, nullable = true)
     private String referralCode;
 
     private String referralAppliedYn = "N";
+
+    // 나를 추천한 사람 (피라미드 상위 노드)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "referred_by_id")
+    private Member referredBy;
 
     // ★ [수정됨] 기본값을 "ROLE_USER" -> "USER"로 변경! (깔끔하게)
     private String role = "USER";

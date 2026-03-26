@@ -4,6 +4,7 @@ import com.kpbridge.kpbridge.dto.CoinPriceDto;
 import com.kpbridge.kpbridge.dto.PriceResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -11,6 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 @Service
@@ -18,6 +22,9 @@ import java.util.Map;
 public class CoinService {
 
     private final RestTemplate restTemplate;
+
+    // 비동기 외부 API 호출용 스레드풀
+    private final ExecutorService apiExecutor = Executors.newFixedThreadPool(6);
 
     // --- 국내 거래소 URL ---
     private static final String UPBIT_TICKER_URL =
@@ -36,6 +43,11 @@ public class CoinService {
             "KRW-ETH", "이더리움",
             "KRW-USDT", "테더"
     );
+    private static final Map<String, String> COIN_NAMES_EN = Map.of(
+            "KRW-BTC", "Bitcoin",
+            "KRW-ETH", "Ethereum",
+            "KRW-USDT", "Tether"
+    );
     private static final Map<String, String> COIN_ICONS = Map.of(
             "KRW-BTC", "https://s2.coinmarketcap.com/static/img/coins/64x64/1.png",
             "KRW-ETH", "https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png",
@@ -44,33 +56,57 @@ public class CoinService {
 
     private static final List<String> TARGET_COINS = List.of("BTC", "ETH", "USDT");
 
-    /** 통합 API - 거래소 선택 지원 */
+    /**
+     * 통합 API - 거래소 선택 지원 + 5초 캐싱
+     * 국내/해외 API 병렬 호출로 응답속도 최적화
+     */
+    @Cacheable(value = "coinPrices", key = "#domestic + '_' + #foreign")
     public PriceResponseDto getAllPrices(String domestic, String foreign) {
-        // 1. 국내 거래소에서 KRW 가격 fetch
+        // 국내/해외 API 병렬 호출
+        CompletableFuture<List<Map<String, Object>>> domesticFuture = CompletableFuture.supplyAsync(() -> {
+            if ("bithumb".equals(domestic)) return fetchBithumbTickers();
+            return fetchUpbitTickers();
+        }, apiExecutor);
+
+        CompletableFuture<double[]> foreignFuture = CompletableFuture.supplyAsync(() -> {
+            double btc, eth;
+            switch (foreign != null ? foreign : "okx") {
+                case "htx":
+                    btc = fetchHtxPrice("btcusdt");
+                    eth = fetchHtxPrice("ethusdt");
+                    break;
+                case "gate":
+                    btc = fetchGatePrice("BTC_USDT");
+                    eth = fetchGatePrice("ETH_USDT");
+                    break;
+                case "binance":
+                    btc = fetchBinancePrice("BTCUSDT");
+                    eth = fetchBinancePrice("ETHUSDT");
+                    break;
+                default: // okx
+                    btc = fetchOkxPrice(OKX_BTC_URL);
+                    eth = fetchOkxPrice(OKX_ETH_URL);
+            }
+            return new double[]{btc, eth};
+        }, apiExecutor);
+
+        // 두 결과 병합 대기
         List<Map<String, Object>> domesticData;
-        if ("bithumb".equals(domestic)) {
-            domesticData = fetchBithumbTickers();
-        } else {
-            domesticData = fetchUpbitTickers();
-        }
-
-        // 2. 해외 거래소에서 USDT 가격 fetch
         double globalBtc, globalEth;
-        switch (foreign != null ? foreign : "okx") {
-            case "htx":
-                globalBtc = fetchHtxPrice("btcusdt");
-                globalEth = fetchHtxPrice("ethusdt");
-                break;
-            case "gate":
-                globalBtc = fetchGatePrice("BTC_USDT");
-                globalEth = fetchGatePrice("ETH_USDT");
-                break;
-            default: // okx
-                globalBtc = fetchOkxPrice(OKX_BTC_URL);
-                globalEth = fetchOkxPrice(OKX_ETH_URL);
+        try {
+            CompletableFuture.allOf(domesticFuture, foreignFuture).join();
+            domesticData = domesticFuture.get();
+            double[] foreignPrices = foreignFuture.get();
+            globalBtc = foreignPrices[0];
+            globalEth = foreignPrices[1];
+        } catch (Exception e) {
+            log.error("병렬 API 호출 실패: {}", e.getMessage());
+            domesticData = List.of();
+            globalBtc = 0;
+            globalEth = 0;
         }
 
-        // 3. 환율 추출 (국내 거래소 USDT 가격)
+        // 환율 추출 (국내 거래소 USDT 가격)
         double exchangeRate = 0;
         for (Map<String, Object> ticker : domesticData) {
             if ("KRW-USDT".equals(ticker.get("market"))) {
@@ -84,14 +120,13 @@ public class CoinService {
                 "KRW-ETH", globalEth
         );
 
-        // 4. 코인별 데이터 조합
+        // 코인별 데이터 조합
         List<CoinPriceDto> coins = new ArrayList<>();
         for (Map<String, Object> ticker : domesticData) {
             String market = (String) ticker.get("market");
             String symbol = market.replace("KRW-", "");
 
             double domesticPrice = toDouble(ticker.get("trade_price"));
-
             double kimchiPremium = 0;
             double buyPriceUsdt = 0;
             double sellPriceUsdt = 0;
@@ -120,8 +155,9 @@ public class CoinService {
         return new PriceResponseDto(coins, exchangeRate);
     }
 
-    // --- 기존 메서드 (MemberController.mainPage에서 호출됨) ---
+    // --- 기존 메서드 (MemberController.mainPage에서 호출됨) - 캐싱 적용 ---
 
+    @Cacheable(value = "singlePrice", key = "'upbit_btc'")
     public String getUpbitBtc() {
         try {
             @SuppressWarnings("unchecked")
@@ -131,6 +167,7 @@ public class CoinService {
         } catch (Exception e) { return "0"; }
     }
 
+    @Cacheable(value = "singlePrice", key = "'bithumb_btc'")
     public String getBithumbBtc() {
         try {
             @SuppressWarnings("unchecked")
@@ -140,6 +177,7 @@ public class CoinService {
         } catch (Exception e) { return "0"; }
     }
 
+    @Cacheable(value = "singlePrice", key = "'binance_btc'")
     public String getBinanceBtc() {
         try {
             @SuppressWarnings("unchecked")
@@ -149,6 +187,7 @@ public class CoinService {
         } catch (Exception e) { return "0"; }
     }
 
+    @Cacheable(value = "singlePrice", key = "'okx_btc'")
     public String getOkxBtc() {
         try {
             @SuppressWarnings("unchecked")
@@ -159,6 +198,7 @@ public class CoinService {
         } catch (Exception e) { return "0"; }
     }
 
+    @Cacheable(value = "singlePrice", key = "'upbit_eth'")
     public String getEthPrice() {
         try {
             @SuppressWarnings("unchecked")
@@ -168,6 +208,7 @@ public class CoinService {
         } catch (Exception e) { return "0"; }
     }
 
+    @Cacheable(value = "singlePrice", key = "'bithumb_eth'")
     public String getBinanceEthPrice() {
         try {
             @SuppressWarnings("unchecked")
@@ -177,6 +218,7 @@ public class CoinService {
         } catch (Exception e) { return "0"; }
     }
 
+    @Cacheable(value = "singlePrice", key = "'okx_eth'")
     public String getOkxEthPrice() {
         try {
             @SuppressWarnings("unchecked")
@@ -251,9 +293,7 @@ public class CoinService {
             Map<String, Object> res = restTemplate.getForObject(url, Map.class);
             if (res != null && "ok".equals(res.get("status"))) {
                 Map<String, Object> tick = (Map<String, Object>) res.get("tick");
-                if (tick != null) {
-                    return toDouble(tick.get("close"));
-                }
+                if (tick != null) return toDouble(tick.get("close"));
             }
         } catch (Exception e) {
             log.error("HTX API 호출 실패 ({}): {}", symbol, e.getMessage());
@@ -271,6 +311,18 @@ public class CoinService {
             }
         } catch (Exception e) {
             log.error("Gate.io API 호출 실패 ({}): {}", pair, e.getMessage());
+        }
+        return 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private double fetchBinancePrice(String symbol) {
+        try {
+            String url = "https://api3.binance.com/api/v3/ticker/price?symbol=" + symbol;
+            Map<String, Object> res = restTemplate.getForObject(url, Map.class);
+            if (res != null) return toDouble(res.get("price"));
+        } catch (Exception e) {
+            log.error("Binance API 호출 실패 ({}): {}", symbol, e.getMessage());
         }
         return 0;
     }

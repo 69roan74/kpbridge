@@ -3,23 +3,24 @@ package com.kpbridge.kpbridge.controller;
 import com.kpbridge.kpbridge.dto.MemberRequestDto;
 import com.kpbridge.kpbridge.entity.Member;
 import com.kpbridge.kpbridge.repository.MemberRepository;
+import com.kpbridge.kpbridge.repository.ReferralRewardRepository;
 import com.kpbridge.kpbridge.service.CoinService;
 import com.kpbridge.kpbridge.service.MemberService;
+import com.kpbridge.kpbridge.service.ReferralService;
 import com.kpbridge.kpbridge.service.TransactionService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // ★ 로그 사용
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.Map;
 
-@Slf4j // ★ System.out 대신 log 사용
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class MemberController {
@@ -28,6 +29,8 @@ public class MemberController {
     private final MemberService memberService;
     private final CoinService coinService;
     private final TransactionService transactionService;
+    private final ReferralService referralService;
+    private final ReferralRewardRepository referralRewardRepository;
     private final PasswordEncoder passwordEncoder;
 
     // 🚨 [비상구] 관리자 계정 생성/복구
@@ -38,7 +41,7 @@ public class MemberController {
         String targetPw = "1q2w3e4r%T";
 
         Member member = memberRepository.findByUserId(targetId).orElse(new Member());
-        
+
         if (member.getId() == null) {
             member.setUserId(targetId);
             member.setUserName("총관리자");
@@ -50,8 +53,7 @@ public class MemberController {
         }
 
         member.setPassword(passwordEncoder.encode(targetPw));
-        member.setRole("ADMIN"); // ★ 관리자 권한 부여
-
+        member.setRole("ADMIN");
         memberRepository.save(member);
         log.warn("🚨 비상구 코드 실행됨! 관리자 계정({})이 복구되었습니다.", targetId);
 
@@ -88,7 +90,7 @@ public class MemberController {
     public String register(MemberRequestDto dto, Model model) {
         try {
             log.info("📝 회원가입 요청 - ID: {}, Name: {}", dto.getUserId(), dto.getUserName());
-            
+
             Member member = new Member();
             member.setUserId(dto.getUserId());
             member.setPassword(dto.getPassword());
@@ -96,9 +98,9 @@ public class MemberController {
             member.setPhone(dto.getPhone());
             member.setEmail(dto.getEmail());
             member.setBirthDate(dto.getBirthDate());
-            member.setReferralCode(dto.getReferralCode());
 
-            memberService.register(member);
+            // 추천인 코드는 inviteCode로 전달 (member의 referralCode는 나의 코드)
+            memberService.register(member, dto.getReferralCode());
             log.info("🎉 회원가입 성공: {}", dto.getUserId());
             return "redirect:/login";
         } catch (RuntimeException e) {
@@ -117,6 +119,16 @@ public class MemberController {
         Member member = memberRepository.findByUserId(principal.getName()).orElseThrow();
         model.addAttribute("member", member);
         model.addAttribute("historyList", transactionService.getHistory(principal.getName()));
+
+        // 추천 보상 이력
+        model.addAttribute("referralRewards",
+                referralRewardRepository.findByRecipientIdOrderByCreatedAtDesc(member.getId()));
+        model.addAttribute("totalReferralEarned",
+                referralRewardRepository.sumAmountByRecipientId(member.getId()));
+        // 내가 직접 추천한 사람 수
+        model.addAttribute("directReferralCount",
+                memberRepository.findByReferredById(member.getId()).size());
+
         return "mypage";
     }
 
@@ -141,11 +153,14 @@ public class MemberController {
     public String applyReferral(@RequestParam("refCode") String refCode, Principal principal) {
         Member member = memberRepository.findByUserId(principal.getName()).get();
         if ("N".equals(member.getReferralAppliedYn())) {
-            member.setMyCoinBalance(member.getMyCoinBalance().add(BigDecimal.valueOf(50)));
-            member.setReferralAppliedYn("Y");
-            member.setReferralCode(refCode);
-            memberRepository.save(member);
-            log.info("🎁 추천인 코드 적용: {}", principal.getName());
+            memberRepository.findByReferralCode(refCode.trim()).ifPresent(referrer -> {
+                member.setReferredBy(referrer);
+                member.setReferralAppliedYn("Y");
+                memberRepository.save(member);
+                // 체인 보상 전파
+                referralService.propagateJoinReward(member);
+                log.info("🎁 추천인 코드 적용: {} → {}", principal.getName(), referrer.getUserId());
+            });
         }
         return "redirect:/mypage";
     }
@@ -160,4 +175,17 @@ public class MemberController {
 
     @GetMapping("/about")
     public String aboutPage() { return "about"; }
+
+    /**
+     * 내 추천 네트워크 계보도 (마이페이지 팝업용 JSON API)
+     * GET /api/referral/tree
+     */
+    @GetMapping("/api/referral/tree")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getReferralTree(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        Member member = memberRepository.findByUserId(principal.getName()).orElseThrow();
+        Map<String, Object> tree = referralService.getReferralTree(member, 10);
+        return ResponseEntity.ok(tree);
+    }
 }

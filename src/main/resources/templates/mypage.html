@@ -5,14 +5,17 @@
     <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
     <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
 
-    <title>마이페이지 - KPBridge</title>
+    <title th:text="#{mypage.title} + ' - KPBridge'">마이페이지 - KPBridge</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; color: #333; }
-        
+
         /* 네비게이션 */
         .navbar { background-color: #ffffff; padding: 15px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .logo { font-size: 24px; font-weight: bold; color: #007bff; text-decoration: none; }
-        
+        .nav-right { display: flex; align-items: center; gap: 15px; }
+        .lang-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 20px; text-decoration: none; color: #555; }
+        .lang-btn:hover { background: #007bff; color: white; border-color: #007bff; }
+
         .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
 
         /* 1. 자산 카드 스타일 */
@@ -24,40 +27,69 @@
         }
         .asset-title { font-size: 14px; opacity: 0.8; letter-spacing: 2px; margin-bottom: 10px; }
         .asset-amount { font-size: 48px; margin: 0; font-weight: 800; }
-        
+
         /* 버튼 그룹 */
-        .btn-group { margin-top: 25px; display: flex; justify-content: center; gap: 15px; }
+        .btn-group { margin-top: 25px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .action-btn {
             background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
             color: white; padding: 12px 35px; border-radius: 50px; cursor: pointer;
             font-weight: bold; transition: 0.3s; backdrop-filter: blur(5px); font-size: 16px;
         }
         .action-btn:hover { background: white; color: #007bff; transform: translateY(-2px); }
+        .action-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-        /* 2. 과제용 치트키: 차익거래 시뮬레이션 박스 */
-        .trade-simulation { 
-            margin: 30px 0; padding: 25px; background: #fff9db; border-radius: 15px; 
-            display: flex; align-items: center; justify-content: space-between; 
-            border: 1px solid #ffe066; box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        /* 추천인 정보 카드 */
+        .referral-card {
+            background: white; border-radius: 15px; padding: 25px 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;
+        }
+        .referral-info { display: flex; gap: 30px; flex-wrap: wrap; }
+        .referral-stat { text-align: center; }
+        .referral-stat-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+        .referral-stat-value { font-size: 20px; font-weight: 700; color: #333; }
+        .referral-code-box {
+            display: flex; align-items: center; gap: 10px;
+            background: #f0f4ff; border-radius: 10px; padding: 10px 15px;
+        }
+        .referral-code-text { font-family: monospace; font-size: 18px; font-weight: 700; color: #007bff; letter-spacing: 2px; }
+        .copy-btn { background: #007bff; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .copy-btn:hover { background: #0056b3; }
+        .network-btn { background: linear-gradient(135deg, #6f42c1, #007bff); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 14px; white-space: nowrap; }
+        .network-btn:hover { opacity: 0.9; transform: translateY(-1px); transition: 0.2s; }
+
+        /* 2. 차익거래 시뮬레이션 박스 */
+        .trade-simulation {
+            margin: 20px 0; padding: 25px; background: #fff9db; border-radius: 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid #ffe066; box-shadow: 0 5px 15px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 15px;
         }
         .sim-btn {
-            background: #f08c00; color: white; border: none; padding: 12px 30px; 
+            background: #f08c00; color: white; border: none; padding: 12px 30px;
             border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px;
-            transition: background 0.2s;
+            transition: background 0.2s; display: flex; align-items: center; gap: 8px;
+            min-width: 160px; justify-content: center;
         }
-        .sim-btn:hover { background: #e67700; }
+        .sim-btn:hover:not(:disabled) { background: #e67700; }
+        .sim-btn:disabled { opacity: 0.7; cursor: not-allowed; background: #aaa; }
+        .spinner { width: 16px; height: 16px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 3. 거래 내역 테이블 (Audit Log) */
+        /* 3. 거래 내역 테이블 */
         .history-box { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .history-table th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #888; font-size: 14px; }
         .history-table td { padding: 15px; border-bottom: 1px solid #f9f9f9; font-size: 15px; }
-        
+
+        /* 스켈레톤 로더 */
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; height: 16px; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
         /* 상태 뱃지 */
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .completed { background: #e6fcf5; color: #0ca678; } 
+        .completed { background: #e6fcf5; color: #0ca678; }
 
-        /* 4. 팝업(Modal) 스타일 */
+        /* 4. 충전/출금 팝업 */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
@@ -65,87 +97,160 @@
         }
         .modal-box {
             background: white; padding: 35px; border-radius: 20px; width: 400px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: popUp 0.3s ease;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: popUp 0.3s ease; max-width: 90vw;
         }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .modal-input { 
-            width: 100%; padding: 15px; margin: 20px 0; border: 1px solid #ddd; 
-            border-radius: 10px; box-sizing: border-box; font-size: 16px; 
+        .modal-input {
+            width: 100%; padding: 15px; margin: 20px 0; border: 1px solid #ddd;
+            border-radius: 10px; box-sizing: border-box; font-size: 16px;
         }
         .confirm-btn { background: #007bff; color: white; border: none; padding: 15px 0; width: 100%; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
         .confirm-btn:hover { background: #0056b3; }
         .close-btn { background: transparent; border: none; color: #999; cursor: pointer; font-size: 14px; text-decoration: underline; }
 
+        /* 5. 계보도 팝업 */
+        .tree-modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .tree-modal-box {
+            background: white; border-radius: 20px; width: 700px; max-width: 95vw; max-height: 85vh;
+            overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.3); animation: popUp 0.3s ease;
+        }
+        .tree-modal-header {
+            background: linear-gradient(135deg, #6f42c1, #007bff); color: white;
+            padding: 25px 30px; border-radius: 20px 20px 0 0;
+            display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0;
+        }
+        .tree-modal-header h2 { margin: 0; font-size: 20px; }
+        .tree-close-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .tree-content { padding: 25px; }
+
+        /* 계보도 트리 */
+        .tree-root { }
+        .tree-node {
+            background: #f8f9ff; border: 1px solid #e0e7ff; border-radius: 12px;
+            padding: 12px 16px; margin: 8px 0; cursor: pointer;
+            transition: all 0.2s; position: relative;
+        }
+        .tree-node:hover { background: #eef2ff; border-color: #6f42c1; }
+        .tree-node-self { background: linear-gradient(135deg, #e8f4ff, #f0f8ff); border-color: #007bff; border-width: 2px; }
+        .tree-node-header { display: flex; justify-content: space-between; align-items: center; }
+        .tree-node-name { font-weight: 700; font-size: 15px; color: #333; }
+        .tree-node-reward { font-size: 13px; color: #007bff; font-weight: 600; }
+        .tree-node-badge { font-size: 11px; background: #6f42c1; color: white; padding: 2px 8px; border-radius: 10px; }
+        .tree-children { margin-left: 30px; border-left: 2px dashed #c5d0f0; padding-left: 15px; }
+        .tree-empty { text-align: center; color: #999; padding: 40px; font-size: 15px; }
+        .tree-loading { text-align: center; padding: 40px; }
+        .tree-loading-spinner { width: 40px; height: 40px; border: 3px solid #eee; border-top-color: #007bff; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 15px; }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .navbar { padding: 15px 20px; }
+            .asset-amount { font-size: 34px; }
+            .referral-card { flex-direction: column; }
+            .trade-simulation { flex-direction: column; text-align: center; }
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <a th:href="@{/}" class="logo">KPBridge</a>
-        <div>
-            <span th:text="${member.userName} + '님'" style="font-weight: bold; margin-right: 15px;"></span>
-            <a href="/logout" style="color: #666; text-decoration: none;">로그아웃</a>
+        <div class="nav-right">
+            <span th:text="${member.userName} + '님'" style="font-weight: bold;"></span>
+            <a th:href="@{/(lang=ko)}" class="lang-btn">KO</a>
+            <a th:href="@{/(lang=en)}" class="lang-btn">EN</a>
+            <a href="/logout" style="color: #666; text-decoration: none;" th:text="#{nav.logout}">로그아웃</a>
         </div>
     </nav>
 
     <div class="container">
+        <!-- 자산 카드 -->
         <div class="asset-card">
-            <div class="asset-title">TOTAL ASSETS (위탁 자산)</div>
+            <div class="asset-title" th:text="#{mypage.balance}">보유 KP</div>
             <h1 class="asset-amount">
                 <span th:text="${#numbers.formatDecimal(member.myCoinBalance, 1, 0, 'COMMA')}">0</span>
-                <span style="font-size: 20px;">KRW</span>
+                <span style="font-size: 20px;" th:text="' ' + #{main.unit}">KP</span>
             </h1>
             <div class="btn-group">
-                <button class="action-btn" onclick="openModal('deposit')">충전하기</button>
-                <button class="action-btn" onclick="openModal('withdraw')">출금하기</button>
+                <button class="action-btn" onclick="openModal('deposit')" th:text="'💰 ' + '충전하기'">충전하기</button>
+                <button class="action-btn" onclick="openModal('withdraw')" th:text="'💸 ' + '출금하기'">출금하기</button>
+                <a th:href="@{/member/edit}" class="action-btn" style="text-decoration:none;" th:text="'✏️ ' + #{mypage.edit}">정보 수정</a>
             </div>
         </div>
 
+        <!-- 추천인 정보 카드 -->
+        <div class="referral-card">
+            <div>
+                <div style="font-size: 13px; color: #999; margin-bottom: 8px;" th:text="#{mypage.referral.code}">내 추천 코드</div>
+                <div class="referral-code-box">
+                    <span class="referral-code-text" id="myRefCode" th:text="${member.referralCode}">-</span>
+                    <button class="copy-btn" onclick="copyRefCode()" th:text="#{mypage.referral.copy}">복사</button>
+                </div>
+            </div>
+            <div class="referral-info">
+                <div class="referral-stat">
+                    <div class="referral-stat-label" th:text="#{mypage.referral.count}">직접 추천</div>
+                    <div class="referral-stat-value">
+                        <span th:text="${directReferralCount}">0</span>명
+                    </div>
+                </div>
+                <div class="referral-stat">
+                    <div class="referral-stat-label" th:text="#{mypage.referral.earned}">추천 수익</div>
+                    <div class="referral-stat-value" style="color: #007bff;">
+                        +<span th:text="${#numbers.formatDecimal(totalReferralEarned, 1, 2, 'COMMA')}">0</span> KP
+                    </div>
+                </div>
+            </div>
+            <button class="network-btn" onclick="openTreeModal()" th:text="'🌐 ' + #{mypage.referral.network}">내 추천 네트워크 보기</button>
+        </div>
+
+        <!-- 차익거래 시뮬레이션 -->
         <div class="trade-simulation">
             <div>
-                <h3 style="margin: 0; color: #d9480f; display: flex; align-items: center;">
-                    🚀 김프 차익거래 시뮬레이션 
-                    <span style="font-size: 12px; background: #fff; color: #f08c00; padding: 2px 8px; border-radius: 10px; margin-left: 10px; border: 1px solid #fcc419;">AI 자동매매</span>
+                <h3 style="margin: 0; color: #d9480f; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    🚀 김프 차익거래 시뮬레이션
+                    <span style="font-size: 12px; background: #fff; color: #f08c00; padding: 2px 8px; border-radius: 10px; border: 1px solid #fcc419;">AI 자동매매</span>
                 </h3>
                 <p style="margin: 5px 0 0; color: #666; font-size: 14px;">
                     현재 김치프리미엄(약 3.5%)을 이용하여 에이전트가 즉시 수익을 실현합니다.
                 </p>
             </div>
-            <button onclick="executeTrade()" class="sim-btn">
-                거래 실행 (+ 수익실현)
+            <button id="tradeBtn" onclick="executeTrade()" class="sim-btn">
+                <span class="spinner" id="tradeSpinner"></span>
+                <span id="tradeBtnText" th:text="'거래 실행 (+ 수익실현)'">거래 실행 (+ 수익실현)</span>
             </button>
         </div>
 
+        <!-- 거래 내역 -->
         <div class="history-box">
             <h3 style="margin-top: 0; color: #444;">📋 에이전트 거래 장부 (Transaction Logs)</h3>
             <table class="history-table">
                 <thead>
                     <tr>
-                        <th>거래 일시</th>
-                        <th>구분</th>
-                        <th>금액</th>
-                        <th>처리 상태</th>
-                        <th>거래 후 잔액</th>
+                        <th th:text="#{mypage.history.date}">거래 일시</th>
+                        <th th:text="#{mypage.history.type}">구분</th>
+                        <th th:text="#{mypage.history.amount}">금액</th>
+                        <th>상태</th>
+                        <th th:text="#{mypage.history.balance}">거래 후 잔액</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:each="tx : ${historyList}">
                         <td th:text="${#temporals.format(tx.date, 'yyyy-MM-dd HH:mm:ss')}"></td>
-                        
                         <td>
-                            <span th:if="${tx.type == '충전 (Deposit)'}" style="color: #007bff; font-weight: bold;">충전</span>
-                            <span th:if="${tx.type == '출금 (Withdraw)'}" style="color: #888; font-weight: bold;">출금</span>
-                            <span th:if="${tx.type == '차익 수익 (Arbitrage)'}" style="color: #d6336c; font-weight: bold;">수익 실현</span>
+                            <span th:if="${tx.type.contains('충전') or tx.type.contains('Deposit')}" style="color: #007bff; font-weight: bold;">충전</span>
+                            <span th:if="${tx.type.contains('출금') or tx.type.contains('Withdraw')}" style="color: #888; font-weight: bold;">출금</span>
+                            <span th:if="${tx.type.contains('수익') or tx.type.contains('차익')}" style="color: #d6336c; font-weight: bold;">수익</span>
+                            <span th:if="${!tx.type.contains('충전') and !tx.type.contains('Deposit') and !tx.type.contains('출금') and !tx.type.contains('Withdraw') and !tx.type.contains('수익') and !tx.type.contains('차익')}" th:text="${tx.type}"></span>
                         </td>
-
-                        <td th:text="${(tx.type == '출금 (Withdraw)' ? '-' : '+') + #numbers.formatDecimal(tx.amount.abs(), 1, 0, 'COMMA') + ' KRW'}" 
-                            th:style="${tx.type == '출금 (Withdraw)' ? 'color: #333;' : 'color: #d6336c; font-weight: bold;'}">
+                        <td th:text="${(tx.amount.signum() >= 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 1, 2, 'COMMA') + ' KP'}"
+                            th:style="${tx.amount.signum() < 0 ? 'color: #333;' : 'color: #d6336c; font-weight: bold;'}">
                         </td>
-
-                        <td><span class="status-badge completed">처리완료</span></td>
-                        <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 0, 'COMMA') + ' KRW'}" style="color: #888;"></td>
+                        <td><span class="status-badge completed" th:text="${tx.status}">완료</span></td>
+                        <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 2, 'COMMA') + ' KP'}" style="color: #888;"></td>
                     </tr>
-                    
                     <tr th:if="${#lists.isEmpty(historyList)}">
                         <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
                             아직 거래 내역이 없습니다.<br>충전 후 차익거래를 시작해보세요.
@@ -156,20 +261,34 @@
         </div>
     </div>
 
+    <!-- 충전/출금 팝업 -->
     <div id="actionModal" class="modal-overlay">
         <div class="modal-box">
             <h2 id="modalTitle" style="margin-top: 0; color: #333;">충전 신청</h2>
-            <p id="modalDesc" style="color: #666; font-size: 15px; margin-bottom: 20px; line-height: 1.5;">
-                에이전트 계좌로 입금할 금액을 입력하세요.
-            </p>
-            <input type="number" id="amountInput" class="modal-input" placeholder="금액 입력 (KRW)">
+            <p id="modalDesc" style="color: #666; font-size: 15px; margin-bottom: 20px; line-height: 1.5;"></p>
+            <input type="number" id="amountInput" class="modal-input" placeholder="금액 입력">
             <button onclick="submitAction()" class="confirm-btn">확인</button>
             <button onclick="closeModal()" class="close-btn">취소</button>
         </div>
     </div>
 
+    <!-- 추천 계보도 팝업 -->
+    <div id="treeModal" class="tree-modal-overlay">
+        <div class="tree-modal-box">
+            <div class="tree-modal-header">
+                <h2 th:text="'🌐 ' + #{referral.tree.title}">내 추천 네트워크</h2>
+                <button class="tree-close-btn" onclick="closeTreeModal()" th:text="#{referral.tree.close}">닫기</button>
+            </div>
+            <div class="tree-content" id="treeContent">
+                <div class="tree-loading">
+                    <div class="tree-loading-spinner"></div>
+                    <p style="color: #999;">네트워크 불러오는 중...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script th:inline="javascript">
-        /* 보안 헤더 함수 */
         function getCsrfHeaders() {
             const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
             const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
@@ -178,14 +297,13 @@
             return headers;
         }
 
+        // ===== 충전/출금 =====
         let currentType = '';
 
         function openModal(type) {
             currentType = type;
-            const modal = document.getElementById('actionModal');
             const title = document.getElementById('modalTitle');
             const desc = document.getElementById('modalDesc');
-            
             if (type === 'deposit') {
                 title.innerText = "자산 충전 신청";
                 desc.innerHTML = "아래 계좌로 입금하실 금액을 입력해 주세요.<br><strong>[우리은행 1002-123-456789 KP에이전트]</strong>";
@@ -193,28 +311,21 @@
                 title.innerText = "수익금 출금 신청";
                 desc.innerHTML = "등록된 본인 계좌로 출금할 금액을 입력해 주세요.<br>(수수료 0원)";
             }
-            document.getElementById('amountInput').value = ''; 
-            modal.style.display = 'flex';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('actionModal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('actionModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('actionModal').style.display = 'none'; }
 
         function submitAction() {
             const amount = document.getElementById('amountInput').value;
             if (!amount || amount <= 0) return alert("금액을 올바르게 입력해주세요.");
-
             const url = currentType === 'deposit' ? '/api/trans/charge' : '/api/trans/withdraw';
-
-            fetch(url, {
-                method: 'POST',
-                headers: getCsrfHeaders(),
-                body: JSON.stringify({ amount: amount })
-            })
+            fetch(url, { method: 'POST', headers: getCsrfHeaders(), body: JSON.stringify({ amount }) })
             .then(res => {
                 if (res.ok) {
-                    alert(currentType === 'deposit' ? "✅ 충전이 완료되었습니다!\n(에이전트 입금 확인)" : "✅ 출금 신청이 처리되었습니다.");
+                    alert(currentType === 'deposit' ? "✅ 충전이 완료되었습니다!" : "✅ 출금 신청이 처리되었습니다.");
+                    closeModal();
                     window.location.reload();
                 } else {
                     res.text().then(msg => alert("오류 발생: " + msg));
@@ -222,23 +333,123 @@
             });
         }
 
+        // ===== 거래 실행 (로딩 UX 포함) =====
         function executeTrade() {
-            if(!confirm("현재 김치프리미엄 차익거래를 시작하시겠습니까?\n(예상 수익률: +3.5% ~ +5.0%)")) return;
+            if (!confirm("현재 김치프리미엄 차익거래를 시작하시겠습니까?\n(예상 수익률: +3.5% ~ +5.0%)")) return;
+
+            const btn = document.getElementById('tradeBtn');
+            const spinner = document.getElementById('tradeSpinner');
+            const btnText = document.getElementById('tradeBtnText');
+
+            // 버튼 비활성화 + 스피너 표시
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = '처리 중...';
 
             const randomProfit = Math.floor(Math.random() * 100000) + 50000;
 
-            fetch('/api/trans/profit', {
+            fetch('/api/trans/trade', {
                 method: 'POST',
                 headers: getCsrfHeaders(),
-                body: JSON.stringify({ amount: randomProfit })
+                body: JSON.stringify({ coin: 'BTC', route: 'Binance→Upbit', amount: randomProfit })
             })
             .then(res => {
                 if (res.ok) {
-                    alert(`🎉 거래 성공!\n\n[프로세스 완료]\n1. 해외 거래소 매수 (Binance)\n2. 국내 거래소 전송 (Upbit)\n3. 매도 및 차익 실현\n\n💰 수익 발생: +${randomProfit.toLocaleString()} KRW`);
+                    alert(`🎉 거래 성공!\n\n[프로세스 완료]\n1. 해외 거래소 매수 (Binance)\n2. 국내 거래소 전송 (Upbit)\n3. 매도 및 차익 실현\n\n💰 수익 발생: +${randomProfit.toLocaleString()} KP`);
                     window.location.reload();
+                } else {
+                    res.text().then(msg => alert("오류: " + msg));
                 }
+            })
+            .catch(() => alert("네트워크 오류가 발생했습니다."))
+            .finally(() => {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = '거래 실행 (+ 수익실현)';
             });
         }
+
+        // ===== 추천 코드 복사 =====
+        function copyRefCode() {
+            const code = document.getElementById('myRefCode').textContent.trim();
+            navigator.clipboard.writeText(code).then(() => {
+                alert('✅ 추천 코드가 복사되었습니다: ' + code);
+            }).catch(() => {
+                // fallback
+                const el = document.createElement('textarea');
+                el.value = code;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                alert('✅ 추천 코드가 복사되었습니다: ' + code);
+            });
+        }
+
+        // ===== 계보도 트리 팝업 =====
+        function openTreeModal() {
+            document.getElementById('treeModal').style.display = 'flex';
+            loadReferralTree();
+        }
+
+        function closeTreeModal() {
+            document.getElementById('treeModal').style.display = 'none';
+        }
+
+        function loadReferralTree() {
+            document.getElementById('treeContent').innerHTML = `
+                <div class="tree-loading">
+                    <div class="tree-loading-spinner"></div>
+                    <p style="color: #999;">네트워크 불러오는 중...</p>
+                </div>`;
+
+            fetch('/api/referral/tree', { headers: { 'Content-Type': 'application/json' } })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('treeContent').innerHTML = renderTree(data, true);
+            })
+            .catch(() => {
+                document.getElementById('treeContent').innerHTML = '<p style="text-align:center;color:#999;padding:30px;">데이터를 불러오지 못했습니다.</p>';
+            });
+        }
+
+        function renderTree(node, isRoot) {
+            const children = node.children || [];
+            const reward = node.totalReward != null ? parseFloat(node.totalReward).toLocaleString('ko-KR', {maximumFractionDigits: 2}) : '0';
+            const levelBadge = isRoot ? '나' : `Lv.${node.level}`;
+            const nodeClass = isRoot ? 'tree-node tree-node-self' : 'tree-node';
+
+            let html = `<div class="${nodeClass}">
+                <div class="tree-node-header">
+                    <div>
+                        <span class="tree-node-badge">${levelBadge}</span>
+                        <span class="tree-node-name" style="margin-left:8px;">${escHtml(node.userName || node.userId)}</span>
+                    </div>
+                    <span class="tree-node-reward">+${reward} KP</span>
+                </div>
+            </div>`;
+
+            if (children.length > 0) {
+                html += '<div class="tree-children">';
+                for (const child of children) {
+                    html += renderTree(child, false);
+                }
+                html += '</div>';
+            }
+            return html;
+        }
+
+        function escHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('treeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeTreeModal();
+        });
+        document.getElementById('actionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
     </script>
 </body>
 </html>

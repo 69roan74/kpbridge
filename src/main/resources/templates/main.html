@@ -170,16 +170,22 @@
 <body>
     <nav class="navbar">
         <a th:href="@{/}" class="logo">KPBridge</a>
-        <div class="user-info" style="font-size: 14px;">
+        <div class="user-info" style="font-size: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- 언어 토글 -->
+            <a th:href="@{/(lang=ko)}" style="font-size:12px; padding:3px 10px; border:1px solid #ddd; border-radius:20px; text-decoration:none; color:#555;">KO</a>
+            <a th:href="@{/(lang=en)}" style="font-size:12px; padding:3px 10px; border:1px solid #ddd; border-radius:20px; text-decoration:none; color:#555;">EN</a>
             <th:block th:if="${user != null}">
-                <span th:text="${user.userName} + '님'" style="font-weight: 600; margin-right: 10px;"></span>
                 <span style="color: #ddd;">|</span>
-                <a th:href="@{/mypage}" style="color: #007bff; font-weight: bold; text-decoration: none; margin: 0 10px;">마이페이지</a>
+                <span th:text="${user.userName} + '님'" style="font-weight: 600;"></span>
                 <span style="color: #ddd;">|</span>
-                <a href="/logout" style="color: #666; text-decoration: none; margin-left: 10px;">로그아웃</a>
+                <a th:href="@{/mypage}" style="color: #007bff; font-weight: bold; text-decoration: none;" th:text="#{nav.mypage}">마이페이지</a>
+                <span style="color: #ddd;">|</span>
+                <a href="/logout" style="color: #666; text-decoration: none;" th:text="#{nav.logout}">로그아웃</a>
             </th:block>
             <th:block th:if="${user == null}">
-                <a href="/login" style="color: #007bff; font-weight: bold; text-decoration: none;">로그인</a>
+                <span style="color: #ddd;">|</span>
+                <a href="/login" style="color: #007bff; font-weight: bold; text-decoration: none;" th:text="#{nav.login}">로그인</a>
+                <a href="/register" style="color: #20c997; font-weight: bold; text-decoration: none;" th:text="#{nav.register}">회원가입</a>
             </th:block>
         </div>
     </nav>

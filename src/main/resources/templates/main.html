@@ -381,6 +381,16 @@
     </footer>
 
 <script th:inline="javascript">
+    /* 코인 영문명 매핑 */
+    const _coinNameEn = {
+        'BTC': 'Bitcoin', 'ETH': 'Ethereum', 'USDT': 'Tether',
+        'XRP': 'XRP', 'SOL': 'Solana', 'ADA': 'Cardano',
+        'DOGE': 'Dogecoin', 'MATIC': 'Polygon', 'DOT': 'Polkadot',
+        'TRX': 'TRON', 'LINK': 'Chainlink', 'AVAX': 'Avalanche',
+        'ATOM': 'Cosmos', 'LTC': 'Litecoin', 'BCH': 'Bitcoin Cash'
+    };
+    const _lang = (document.cookie.match(/(?:^|;\s*)LANG=([^;]*)/) || [])[1] || 'ko';
+
     /* i18n strings from server */
     const _i18n = {
         errSame:    [[#{trade.error.same}]],
@@ -499,12 +509,13 @@
 
                 const buyUsdt = coin.buyPriceUsdt > 0 ? coin.buyPriceUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
                 const sellUsdt = coin.sellPriceUsdt > 0 ? coin.sellPriceUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
+                const displayName = _lang === 'en' ? (_coinNameEn[coin.symbol] || coin.name) : coin.name;
 
                 html += '<tr>' +
                     '<td><div class="coin-name-cell">' +
                         '<img src="' + coin.iconUrl + '" class="coin-icon">' +
                         '<div class="coin-name-text">' +
-                            '<span class="name">' + coin.name + '</span>' +
+                            '<span class="name">' + displayName + '</span>' +
                             '<span class="ticker">' + coin.symbol + '</span>' +
                         '</div>' +
                     '</div></td>' +

@@ -47,7 +47,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").hasRole("ADMIN") // 관리자만 접근 가능
-                .requestMatchers("/", "/register", "/login", "/about", "/faq", "/css/**", "/js/**", "/api/**", "/emergency-fix").permitAll()
+                .requestMatchers("/", "/register", "/login", "/about", "/faq", "/css/**", "/js/**", "/api/**", "/emergency-fix", "/favicon.svg", "/favicon.ico").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(login -> login

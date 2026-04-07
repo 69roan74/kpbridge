@@ -263,12 +263,14 @@
             <h1>통합 거래 장부</h1>
             <div class="table-box">
                 <table>
-                    <thead><tr><th>시간</th><th>회원</th><th>내용</th><th>금액</th><th>잔액</th><th>관리</th></tr></thead>
+                    <thead><tr><th>시간</th><th>회원</th><th>내용</th><th>출금처</th><th>금액</th><th>잔액</th><th>관리</th></tr></thead>
                     <tbody>
                         <tr th:each="tx : ${transactions}">
                             <td th:text="${#temporals.format(tx.date, 'MM-dd HH:mm')}"></td>
                             <td th:text="${tx.member.userName}"></td>
                             <td th:text="${tx.type}"></td>
+                            <td style="font-size:12px; color:#555; max-width:200px; word-break:break-all;"
+                                th:text="${tx.memo != null and !#strings.isEmpty(tx.memo)} ? ${tx.memo} : '-'"></td>
                             <td th:text="${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KP'"></td>
                             <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 2, 'COMMA')} + ' KP'"></td>
                             <td>

@@ -32,15 +32,17 @@ public class TransactionService {
     }
 
     @Transactional
-    public void withdraw(String userId, BigDecimal amount) {
+    public void withdraw(String userId, BigDecimal amount, String memo) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
         if (member.getMyCoinBalance().compareTo(amount) < 0) {
             throw new RuntimeException("잔액이 부족합니다.");
         }
         member.setMyCoinBalance(member.getMyCoinBalance().subtract(amount));
         memberRepository.save(member);
-        saveLog(member, "출금 (Withdraw)", amount.negate(), "완료", null, null, null);
-        log.info("💸 출금 완료: 사용자={}, 금액={}", userId, amount);
+        Transaction tx = saveLog(member, "출금 (Withdraw)", amount.negate(), "출금신청", null, null, null);
+        tx.setMemo(memo);
+        transactionRepository.save(tx);
+        log.info("💸 출금 신청: 사용자={}, 금액={}, 출금처={}", userId, amount, memo);
     }
 
     /**

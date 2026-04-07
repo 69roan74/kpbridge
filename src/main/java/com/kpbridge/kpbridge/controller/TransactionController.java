@@ -28,9 +28,11 @@ public class TransactionController {
 
     // 2. 출금 요청
     @PostMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@RequestBody Map<String, BigDecimal> req, Principal principal) {
+    public ResponseEntity<?> withdraw(@RequestBody Map<String, Object> req, Principal principal) {
         try {
-            transactionService.withdraw(principal.getName(), req.get("amount"));
+            BigDecimal amount = new BigDecimal(String.valueOf(req.get("amount")));
+            String memo = String.valueOf(req.getOrDefault("memo", ""));
+            transactionService.withdraw(principal.getName(), amount, memo);
             return ResponseEntity.ok("출금 신청이 처리되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

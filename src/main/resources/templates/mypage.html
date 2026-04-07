@@ -118,17 +118,42 @@
             backdrop-filter: blur(3px);
         }
         .modal-box {
-            background: white; padding: 35px; border-radius: 20px; width: 400px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: popUp 0.3s ease; max-width: 90vw;
+            background: white; padding: 28px; border-radius: 20px; width: 460px; text-align: left;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2); animation: popUp 0.3s ease; max-width: 94vw;
+            max-height: 90vh; overflow-y: auto;
         }
         @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-input {
-            width: 100%; padding: 15px; margin: 20px 0; border: 1px solid #ddd;
-            border-radius: 10px; box-sizing: border-box; font-size: 16px;
+        .modal-title { font-size: 18px; font-weight: 800; color: #333; margin: 0 0 18px; text-align: center; }
+        /* 탭 */
+        .method-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+        .method-tab {
+            flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 10px;
+            background: white; cursor: pointer; font-size: 14px; font-weight: 600; color: #888; transition: 0.2s;
         }
-        .confirm-btn { background: #007bff; color: white; border: none; padding: 15px 0; width: 100%; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
+        .method-tab.active { border-color: #007bff; color: #007bff; background: #f0f7ff; }
+        /* 안내 박스 */
+        .info-label { font-size: 12px; font-weight: 700; color: #888; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+        .info-copy-box {
+            display: flex; align-items: center; gap: 10px; background: #f8f9fa;
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 6px;
+        }
+        .info-value { font-family: monospace; font-size: 14px; font-weight: 700; color: #333; flex: 1; word-break: break-all; }
+        .mini-copy-btn {
+            background: #007bff; color: white; border: none; padding: 5px 12px;
+            border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap; flex-shrink: 0;
+        }
+        .mini-copy-btn:hover { background: #0056b3; }
+        .info-hint { font-size: 12px; color: #e67700; margin-bottom: 14px; }
+        /* 구분선 */
+        .modal-divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+        .modal-input {
+            width: 100%; padding: 13px 14px; margin: 6px 0 14px; border: 1.5px solid #ddd;
+            border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none;
+        }
+        .modal-input:focus { border-color: #007bff; }
+        .confirm-btn { background: #007bff; color: white; border: none; padding: 14px 0; width: 100%; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-bottom: 10px; }
         .confirm-btn:hover { background: #0056b3; }
-        .close-btn { background: transparent; border: none; color: #999; cursor: pointer; font-size: 14px; text-decoration: underline; }
+        .close-btn { display: block; text-align: center; background: transparent; border: none; color: #999; cursor: pointer; font-size: 14px; text-decoration: underline; width: 100%; }
 
         /* 5. 계보도 팝업 */
         .tree-modal-overlay {
@@ -361,10 +386,58 @@
     <!-- 충전/출금 팝업 -->
     <div id="actionModal" class="modal-overlay">
         <div class="modal-box">
-            <h2 id="modalTitle" style="margin-top: 0; color: #333;">충전 신청</h2>
-            <p id="modalDesc" style="color: #666; font-size: 15px; margin-bottom: 20px; line-height: 1.5;"></p>
-            <input type="number" id="amountInput" class="modal-input" placeholder="금액 입력">
-            <button onclick="submitAction()" class="confirm-btn">확인</button>
+            <h2 class="modal-title" id="modalTitle">충전 신청</h2>
+
+            <!-- 방법 탭 (USDT / 원화) -->
+            <div class="method-tabs">
+                <button id="tabUsdt" class="method-tab active" onclick="selectMethod('usdt')">💎 USDT (테더)</button>
+                <button id="tabKrw"  class="method-tab"        onclick="selectMethod('krw')">🏦 원화 (KRW)</button>
+            </div>
+
+            <!-- ===== 충전 안내 ===== -->
+            <div id="depositSection">
+                <!-- USDT 입금 안내 -->
+                <div id="depositUsdt">
+                    <div class="info-label">입금 지갑 주소 (TRC20 네트워크)</div>
+                    <div class="info-copy-box">
+                        <span class="info-value" id="companyWallet">TKpBridge9xCzFm2nHqRsUvWy3D7K</span>
+                        <button class="mini-copy-btn" onclick="copyElem('companyWallet')">복사</button>
+                    </div>
+                    <div class="info-hint">⚠️ TRC20(USDT) 네트워크만 지원 · 다른 네트워크 입금 시 손실</div>
+                </div>
+                <!-- 원화 입금 안내 -->
+                <div id="depositKrw" style="display:none;">
+                    <div class="info-label">입금 계좌</div>
+                    <div class="info-copy-box">
+                        <span class="info-value" id="companyBank">국민은행 123-45-6789012</span>
+                        <button class="mini-copy-btn" onclick="copyElem('companyBank')">복사</button>
+                    </div>
+                    <div class="info-hint">예금주: KP브릿지 · 입금 후 아래 금액 입력</div>
+                </div>
+                <hr class="modal-divider">
+                <div class="info-label">입금하신 금액 (KRW 기준)</div>
+                <input type="number" id="amountInput" class="modal-input" placeholder="예) 100000">
+            </div>
+
+            <!-- ===== 출금 안내 ===== -->
+            <div id="withdrawSection" style="display:none;">
+                <!-- USDT 출금 -->
+                <div id="withdrawUsdt">
+                    <div class="info-label">받을 USDT 지갑 주소 (TRC20)</div>
+                    <input type="text" id="withdrawWallet" class="modal-input" placeholder="TRC20 지갑 주소 입력">
+                    <div class="info-hint" style="margin-top:-8px;">⚠️ 잘못된 주소 입력 시 복구 불가</div>
+                </div>
+                <!-- 원화 출금 -->
+                <div id="withdrawKrw" style="display:none;">
+                    <div class="info-label">출금받을 계좌</div>
+                    <input type="text" id="withdrawBank" class="modal-input" placeholder="예) 국민은행 123-45-6789012 홍길동">
+                </div>
+                <hr class="modal-divider">
+                <div class="info-label">출금 금액 (KRW 기준)</div>
+                <input type="number" id="withdrawAmount" class="modal-input" placeholder="출금할 금액 입력">
+            </div>
+
+            <button onclick="submitAction()" class="confirm-btn" id="modalConfirmBtn">신청하기</button>
             <button onclick="closeModal()" class="close-btn">취소</button>
         </div>
     </div>
@@ -401,38 +474,70 @@
 
         // ===== 충전/출금 =====
         let currentType = '';
+        let currentMethod = 'usdt'; // 'usdt' | 'krw'
 
         function openModal(type) {
             currentType = type;
-            const title = document.getElementById('modalTitle');
-            const desc = document.getElementById('modalDesc');
+            document.getElementById('modalTitle').innerText = type === 'deposit' ? '💰 자산 충전 신청' : '💸 수익금 출금 신청';
+            document.getElementById('depositSection').style.display  = type === 'deposit' ? '' : 'none';
+            document.getElementById('withdrawSection').style.display = type === 'withdraw' ? '' : 'none';
+            // 초기화
+            selectMethod('usdt');
             if (type === 'deposit') {
-                title.innerText = "자산 충전 신청";
-                desc.innerHTML = "아래 계좌로 입금하실 금액을 입력해 주세요.<br><strong>[우리은행 1002-123-456789 KP에이전트]</strong>";
+                document.getElementById('amountInput').value = '';
             } else {
-                title.innerText = "수익금 출금 신청";
-                desc.innerHTML = "등록된 본인 계좌로 출금할 금액을 입력해 주세요.<br>(수수료 0원)";
+                document.getElementById('withdrawWallet').value = '';
+                document.getElementById('withdrawBank').value = '';
+                document.getElementById('withdrawAmount').value = '';
             }
-            document.getElementById('amountInput').value = '';
             document.getElementById('actionModal').style.display = 'flex';
+        }
+
+        function selectMethod(method) {
+            currentMethod = method;
+            document.getElementById('tabUsdt').classList.toggle('active', method === 'usdt');
+            document.getElementById('tabKrw').classList.toggle('active',  method === 'krw');
+
+            if (currentType === 'deposit') {
+                document.getElementById('depositUsdt').style.display = method === 'usdt' ? '' : 'none';
+                document.getElementById('depositKrw').style.display  = method === 'krw'  ? '' : 'none';
+            } else {
+                document.getElementById('withdrawUsdt').style.display = method === 'usdt' ? '' : 'none';
+                document.getElementById('withdrawKrw').style.display  = method === 'krw'  ? '' : 'none';
+            }
         }
 
         function closeModal() { document.getElementById('actionModal').style.display = 'none'; }
 
+        function copyElem(id) {
+            const text = document.getElementById(id).textContent.trim();
+            navigator.clipboard.writeText(text).then(() => alert('✅ 복사되었습니다:\n' + text))
+                .catch(() => { prompt('직접 복사하세요:', text); });
+        }
+
         function submitAction() {
-            const amount = document.getElementById('amountInput').value;
-            if (!amount || amount <= 0) return alert("금액을 올바르게 입력해주세요.");
-            const url = currentType === 'deposit' ? '/api/trans/charge' : '/api/trans/withdraw';
-            fetch(url, { method: 'POST', headers: getCsrfHeaders(), body: JSON.stringify({ amount }) })
-            .then(res => {
-                if (res.ok) {
-                    alert(currentType === 'deposit' ? "✅ 충전이 완료되었습니다!" : "✅ 출금 신청이 처리되었습니다.");
-                    closeModal();
-                    window.location.reload();
-                } else {
-                    res.text().then(msg => alert("오류 발생: " + msg));
-                }
-            });
+            if (currentType === 'deposit') {
+                const amount = document.getElementById('amountInput').value;
+                if (!amount || Number(amount) <= 0) return alert("금액을 올바르게 입력해주세요.");
+                fetch('/api/trans/charge', { method: 'POST', headers: getCsrfHeaders(), body: JSON.stringify({ amount }) })
+                .then(res => {
+                    if (res.ok) { alert("✅ 충전 신청이 접수되었습니다!\n관리자 확인 후 반영됩니다."); closeModal(); window.location.reload(); }
+                    else res.text().then(msg => alert("오류: " + msg));
+                });
+            } else {
+                const amount = document.getElementById('withdrawAmount').value;
+                if (!amount || Number(amount) <= 0) return alert("출금 금액을 올바르게 입력해주세요.");
+                const dest = currentMethod === 'usdt'
+                    ? document.getElementById('withdrawWallet').value.trim()
+                    : document.getElementById('withdrawBank').value.trim();
+                if (!dest) return alert(currentMethod === 'usdt' ? "USDT 지갑 주소를 입력해주세요." : "출금 계좌를 입력해주세요.");
+                const memo = (currentMethod === 'usdt' ? '[USDT] ' : '[KRW] ') + dest;
+                fetch('/api/trans/withdraw', { method: 'POST', headers: getCsrfHeaders(), body: JSON.stringify({ amount, memo }) })
+                .then(res => {
+                    if (res.ok) { alert("✅ 출금 신청이 접수되었습니다!\n담당자 확인 후 처리됩니다."); closeModal(); window.location.reload(); }
+                    else res.text().then(msg => alert("오류: " + msg));
+                });
+            }
         }
 
         // ===== 거래 실행 (로딩 UX 포함) =====

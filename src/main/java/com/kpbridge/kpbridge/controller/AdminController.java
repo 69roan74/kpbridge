@@ -8,7 +8,9 @@ import com.kpbridge.kpbridge.repository.MemberRepository;
 import com.kpbridge.kpbridge.repository.ReferralConfigRepository;
 import com.kpbridge.kpbridge.repository.ReferralRewardRepository;
 import com.kpbridge.kpbridge.repository.TransactionRepository;
+import com.kpbridge.kpbridge.service.ChatService;
 import com.kpbridge.kpbridge.service.ReferralService;
+import com.kpbridge.kpbridge.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -16,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,6 +33,8 @@ public class AdminController {
     private final ReferralConfigRepository referralConfigRepository;
     private final ReferralRewardRepository referralRewardRepository;
     private final ReferralService referralService;
+    private final TransactionService transactionService;
+    private final ChatService chatService;
 
     // 1. 대시보드 메인
     @GetMapping("")
@@ -50,6 +55,13 @@ public class AdminController {
         model.addAttribute("totalAssets", totalAssets);
         model.addAttribute("totalReferralRewards", totalReferralRewards);
         model.addAttribute("activeReferrers", activeReferrers);
+
+        // 거래 주문 현황
+        model.addAttribute("pendingOrders", transactionService.getPendingOrders());
+        model.addAttribute("activeOrders", transactionService.getActiveOrders());
+
+        // 채팅 미확인 메시지 수
+        model.addAttribute("totalUnread", chatService.getTotalUnread());
 
         // 추천인 요율 설정 (관리자 페이지용)
         Optional<ReferralConfig> globalConfig = referralConfigRepository.findByTargetType("GLOBAL");
@@ -163,5 +175,24 @@ public class AdminController {
         referralConfigRepository.findByTargetTypeAndTargetMemberId("INDIVIDUAL", memberId)
                 .ifPresent(referralConfigRepository::delete);
         return "redirect:/admin";
+    }
+
+    // ===== 거래 상태 관리 =====
+
+    /**
+     * 거래 상태 변경 (거래대기중 → 거래중 → 거래완료)
+     */
+    @PostMapping("/order/status")
+    @ResponseBody
+    public ResponseEntity<?> updateOrderStatus(@RequestBody Map<String, Object> req) {
+        Long txId = Long.valueOf(req.get("txId").toString());
+        String newStatus = req.get("status").toString();
+
+        if ("거래완료".equals(newStatus)) {
+            transactionService.completeOrder(txId);
+        } else {
+            transactionService.updateTradeStatus(txId, newStatus);
+        }
+        return ResponseEntity.ok(Map.of("result", "ok", "status", newStatus));
     }
 }

@@ -6,15 +6,10 @@ import com.kpbridge.kpbridge.repository.MemberRepository;
 import com.kpbridge.kpbridge.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,19 +22,12 @@ public class TransactionService {
     private final MemberRepository memberRepository;
     private final ReferralService referralService;
 
-    // Telegram 인증 정보 (application.properties에서 관리)
-    @Value("${telegram.bot-token:}")
-    private String botToken;
-
-    @Value("${telegram.chat-id:}")
-    private String chatId;
-
     @Transactional
     public void charge(String userId, BigDecimal amount) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
         member.setMyCoinBalance(member.getMyCoinBalance().add(amount));
         memberRepository.save(member);
-        saveLog(member, "충전 (Deposit)", amount, "완료");
+        saveLog(member, "충전 (Deposit)", amount, "완료", null, null, null);
         log.info("💰 충전 완료: 사용자={}, 금액={}", userId, amount);
     }
 
@@ -51,36 +39,68 @@ public class TransactionService {
         }
         member.setMyCoinBalance(member.getMyCoinBalance().subtract(amount));
         memberRepository.save(member);
-        saveLog(member, "출금 (Withdraw)", amount.negate(), "완료");
+        saveLog(member, "출금 (Withdraw)", amount.negate(), "완료", null, null, null);
         log.info("💸 출금 완료: 사용자={}, 금액={}", userId, amount);
     }
 
+    /**
+     * 거래 주문 접수 - 상태: 거래대기중
+     * 실제 수익 계산은 관리자가 거래완료 처리 시 수행
+     */
     @Transactional
-    public void executeTrade(String userId, String coinType, String route, BigDecimal investment) {
+    public Transaction submitOrder(String userId, String coinType, String route, BigDecimal investment) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
 
-        // 수익 계산 (3.5% ~ 5.0%)
-        double rate = 0.035 + (Math.random() * 0.015);
-        BigDecimal profit = investment.multiply(BigDecimal.valueOf(rate));
+        Transaction tx = new Transaction();
+        tx.setMember(member);
+        tx.setType("거래 주문");
+        tx.setAmount(investment);
+        tx.setBalanceAfter(member.getMyCoinBalance());
+        tx.setStatus("거래대기중");
+        tx.setTradeStatus("거래대기중");
+        tx.setCoinType(coinType);
+        tx.setRoute(route);
+        tx.setDate(LocalDateTime.now());
+        transactionRepository.save(tx);
 
-        // 자산 증가
+        log.info("📋 거래 주문 접수: 사용자={}, 코인={}, 경로={}, 금액={}", userId, coinType, route, investment);
+        return tx;
+    }
+
+    /**
+     * 관리자가 거래 완료 처리 시 호출 - 수익 계산 및 잔액 반영
+     */
+    @Transactional
+    public void completeOrder(Long txId) {
+        Transaction tx = transactionRepository.findById(txId).orElseThrow();
+        Member member = tx.getMember();
+
+        double rate = 0.035 + (Math.random() * 0.015);
+        BigDecimal profit = tx.getAmount().multiply(BigDecimal.valueOf(rate));
+
         member.setMyCoinBalance(member.getMyCoinBalance().add(profit));
         memberRepository.save(member);
 
-        String description = coinType + " 차익거래 수익";
-        Transaction tx = saveLog(member, description, profit, "완료");
+        tx.setTradeStatus("거래완료");
+        tx.setStatus("거래완료");
+        tx.setAmount(profit);
+        tx.setBalanceAfter(member.getMyCoinBalance());
+        transactionRepository.save(tx);
 
-        log.info("🚀 거래 실행: 사용자={}, 수익={}", userId, profit);
-
-        // 피라미드 추천 보상 전파 (상위 체인 전체에 TRADE 보상 지급)
         referralService.propagateTradeReward(member, profit, tx.getId());
+        log.info("✅ 거래 완료 처리: txId={}, 수익={}", txId, profit);
+    }
 
-        // 텔레그램 발송
-        String message = String.format(
-                "[🚀 거래 알림]\n회원: %s\n코인: %s\n경로: %s\n투자금: %,d KRW\n수익: %,d KRW",
-                userId, coinType, route, investment.longValue(), profit.longValue()
-        );
-        sendTelegramAlert(message);
+    /**
+     * 관리자가 거래 상태 변경
+     */
+    @Transactional
+    public void updateTradeStatus(Long txId, String newStatus) {
+        Transaction tx = transactionRepository.findById(txId).orElseThrow();
+        tx.setTradeStatus(newStatus);
+        tx.setStatus(newStatus);
+        transactionRepository.save(tx);
+        log.info("🔄 거래 상태 변경: txId={}, 상태={}", txId, newStatus);
     }
 
     public List<Transaction> getHistory(String userId) {
@@ -88,37 +108,26 @@ public class TransactionService {
         return transactionRepository.findByMemberIdOrderByDateDesc(member.getId());
     }
 
-    private Transaction saveLog(Member member, String type, BigDecimal amount, String status) {
+    public List<Transaction> getPendingOrders() {
+        return transactionRepository.findByTradeStatusOrderByDateDesc("거래대기중");
+    }
+
+    public List<Transaction> getActiveOrders() {
+        return transactionRepository.findByTradeStatusOrderByDateDesc("거래중");
+    }
+
+    private Transaction saveLog(Member member, String type, BigDecimal amount, String status,
+                                 String tradeStatus, String coinType, String route) {
         Transaction tx = new Transaction();
         tx.setMember(member);
         tx.setType(type);
         tx.setAmount(amount);
         tx.setBalanceAfter(member.getMyCoinBalance());
         tx.setStatus(status);
+        tx.setTradeStatus(tradeStatus);
+        tx.setCoinType(coinType);
+        tx.setRoute(route);
         tx.setDate(LocalDateTime.now());
         return transactionRepository.save(tx);
-    }
-
-    private void sendTelegramAlert(String text) {
-        if (botToken == null || botToken.isBlank() || chatId == null || chatId.isBlank()) {
-            log.debug("텔레그램 설정 없음, 발송 스킵");
-            return;
-        }
-        new Thread(() -> {
-            try {
-                String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8);
-                String urlStr = "https://api.telegram.org/bot" + botToken
-                        + "/sendMessage?chat_id=" + chatId + "&text=" + encodedText;
-                URL url = new URL(urlStr);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                conn.setRequestMethod("GET");
-                conn.getInputStream().close();
-                log.info("📲 텔레그램 발송 성공");
-            } catch (Exception e) {
-                log.error("🚫 텔레그램 발송 실패: {}", e.getMessage());
-            }
-        }).start();
     }
 }

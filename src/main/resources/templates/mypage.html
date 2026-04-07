@@ -89,6 +89,26 @@
         /* 상태 뱃지 */
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
         .completed { background: #e6fcf5; color: #0ca678; }
+        .pending { background: #fff3cd; color: #856404; }
+        .active { background: #cfe2ff; color: #0a58ca; }
+
+        /* 거래 주문 현황 */
+        .orders-box { background: white; border-radius: 15px; padding: 25px 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .order-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+        .order-item:last-child { border-bottom: none; }
+        .order-detail { font-size: 14px; color: #555; }
+        .order-detail strong { color: #333; font-size: 15px; }
+
+        /* 채팅 버튼 */
+        .chat-float-btn {
+            position: fixed; bottom: 30px; left: 30px;
+            background: linear-gradient(135deg, #007bff, #00d2ff); color: white;
+            border: none; border-radius: 50px; padding: 14px 22px; cursor: pointer;
+            font-size: 15px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .chat-float-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,123,255,0.5); }
 
         /* 4. 충전/출금 팝업 */
         .modal-overlay {
@@ -207,6 +227,22 @@
             <button class="network-btn" onclick="openTreeModal()" th:text="'🌐 ' + #{mypage.referral.network}">내 추천 네트워크 보기</button>
         </div>
 
+        <!-- 진행 중인 거래 주문 현황 -->
+        <div class="orders-box" th:if="${!#lists.isEmpty(orderList)}">
+            <h3 style="margin-top: 0; color: #444; margin-bottom: 5px;">📋 거래 주문 현황</h3>
+            <p style="color: #999; font-size: 13px; margin-bottom: 15px;">주문 상태를 실시간으로 확인하세요. 문의는 1:1 채팅을 이용해주세요.</p>
+            <div th:each="order : ${orderList}" class="order-item">
+                <div class="order-detail">
+                    <strong th:text="${order.coinType} + ' - ' + ${order.route}"></strong><br>
+                    <span th:text="${#numbers.formatDecimal(order.amount, 1, 0, 'COMMA')} + ' KRW'"></span>
+                    <span style="color: #bbb; margin: 0 6px;">|</span>
+                    <span th:text="${#temporals.format(order.date, 'MM/dd HH:mm')}"></span>
+                </div>
+                <span th:class="'status-badge ' + (${order.tradeStatus == '거래대기중'} ? 'pending' : (${order.tradeStatus == '거래중'} ? 'active' : 'completed'))"
+                      th:text="${order.tradeStatus}"></span>
+            </div>
+        </div>
+
         <!-- 차익거래 시뮬레이션 -->
         <div class="trade-simulation">
             <div>
@@ -288,6 +324,11 @@
             </div>
         </div>
     </div>
+
+    <!-- 1:1 채팅 플로팅 버튼 -->
+    <a href="/chat" class="chat-float-btn">
+        💬 1:1 문의
+    </a>
 
     <script th:inline="javascript">
         function getCsrfHeaders() {

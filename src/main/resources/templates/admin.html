@@ -53,9 +53,14 @@
         <div class="menu-item active" onclick="showSection('dashboard', this)">📊 대시보드</div>
         <div class="menu-item" onclick="showSection('members', this)">👥 회원 관리</div>
         <div class="menu-item" onclick="showSection('transactions', this)">📜 통합 장부</div>
+        <div class="menu-item" onclick="showSection('orders', this)">📋 거래 주문 관리</div>
         <div class="menu-item" onclick="showSection('referral', this)">🔗 추천 요율 설정</div>
         <div class="menu-item" onclick="showSection('faq', this)">💡 FAQ 관리</div>
-        <a href="/" class="menu-item" style="margin-top: 50px; color: #fa5252;">🚪 메인으로 나가기</a>
+        <a href="/admin/chat" class="menu-item">
+            💬 1:1 채팅
+            <span th:if="${totalUnread > 0}" style="background:#fa5252;color:white;padding:2px 7px;border-radius:10px;font-size:11px;margin-left:5px;" th:text="${totalUnread}"></span>
+        </a>
+        <a href="/" class="menu-item" style="margin-top: 20px; color: #fa5252;">🚪 메인으로 나가기</a>
     </div>
 
     <div class="main-content">
@@ -122,6 +127,60 @@
                                 </form>
                                 <button class="btn-sm" style="background:#6f42c1;color:white;" th:onclick="openIndividualRateModal([[${m.id}]], [[${m.userName}]])">요율</button>
                             </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 거래 주문 관리 -->
+        <div id="orders" class="section">
+            <h1>📋 거래 주문 관리</h1>
+            <p style="color:#888;font-size:14px;margin-bottom:20px;">사용자가 제출한 거래 주문의 상태를 관리하세요. 상태를 변경하면 사용자의 마이페이지에 즉시 반영됩니다.</p>
+
+            <div class="table-box">
+                <h3 style="margin-top:0;color:#856404;">🕐 거래대기중 <span th:text="'(' + ${#lists.size(pendingOrders)} + '건)'"></span></h3>
+                <table>
+                    <thead><tr><th>시간</th><th>회원</th><th>코인</th><th>경로</th><th>금액(KRW)</th><th>상태 변경</th></tr></thead>
+                    <tbody>
+                        <tr th:each="order : ${pendingOrders}">
+                            <td th:text="${#temporals.format(order.date, 'MM-dd HH:mm')}"></td>
+                            <td th:text="${order.member.userName}"></td>
+                            <td th:text="${order.coinType}"></td>
+                            <td th:text="${order.route}"></td>
+                            <td th:text="${#numbers.formatDecimal(order.amount, 1, 0, 'COMMA')}"></td>
+                            <td>
+                                <button class="btn-sm" style="background:#0a58ca;color:white;"
+                                        th:onclick="'updateOrderStatus(' + ${order.id} + ', \'거래중\')'">거래 시작</button>
+                                <button class="btn-sm" style="background:#20c997;color:white;"
+                                        th:onclick="'updateOrderStatus(' + ${order.id} + ', \'거래완료\')'">완료 처리</button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pendingOrders)}">
+                            <td colspan="6" style="text-align:center;color:#aaa;padding:30px;">대기 중인 주문이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-box" style="margin-top:20px;">
+                <h3 style="margin-top:0;color:#0a58ca;">⚡ 거래중 <span th:text="'(' + ${#lists.size(activeOrders)} + '건)'"></span></h3>
+                <table>
+                    <thead><tr><th>시간</th><th>회원</th><th>코인</th><th>경로</th><th>금액(KRW)</th><th>상태 변경</th></tr></thead>
+                    <tbody>
+                        <tr th:each="order : ${activeOrders}">
+                            <td th:text="${#temporals.format(order.date, 'MM-dd HH:mm')}"></td>
+                            <td th:text="${order.member.userName}"></td>
+                            <td th:text="${order.coinType}"></td>
+                            <td th:text="${order.route}"></td>
+                            <td th:text="${#numbers.formatDecimal(order.amount, 1, 0, 'COMMA')}"></td>
+                            <td>
+                                <button class="btn-sm" style="background:#20c997;color:white;"
+                                        th:onclick="'updateOrderStatus(' + ${order.id} + ', \'거래완료\')'">완료 처리</button>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(activeOrders)}">
+                            <td colspan="6" style="text-align:center;color:#aaa;padding:30px;">진행 중인 거래가 없습니다.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -298,6 +357,24 @@
 
         function closeModals() {
             document.querySelectorAll('.modal').forEach(el => el.style.display = 'none');
+        }
+
+        // 거래 상태 변경
+        function updateOrderStatus(txId, status) {
+            const labels = { '거래중': '거래 시작', '거래완료': '거래 완료 처리' };
+            if (!confirm(`[${txId}번 주문] ${labels[status] || status} 처리하시겠습니까?`)) return;
+
+            fetch('/api/admin/order/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ txId, status })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('✅ 상태가 [' + data.status + ']으로 변경되었습니다.');
+                window.location.reload();
+            })
+            .catch(() => alert('오류가 발생했습니다.'));
         }
 
         // 모달 외부 클릭 시 닫기

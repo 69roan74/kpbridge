@@ -120,6 +120,12 @@ public class MemberController {
         model.addAttribute("member", member);
         model.addAttribute("historyList", transactionService.getHistory(principal.getName()));
 
+        // 진행 중인 거래 주문 (거래대기중, 거래중만 표시)
+        model.addAttribute("orderList",
+                transactionService.getHistory(principal.getName()).stream()
+                        .filter(tx -> tx.getTradeStatus() != null && !"거래완료".equals(tx.getTradeStatus()))
+                        .toList());
+
         // 추천 보상 이력
         model.addAttribute("referralRewards",
                 referralRewardRepository.findByRecipientIdOrderByCreatedAtDesc(member.getId()));

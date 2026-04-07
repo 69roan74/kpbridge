@@ -1,5 +1,7 @@
 package com.kpbridge.kpbridge.controller;
 
+import com.kpbridge.kpbridge.entity.Transaction;
+import com.kpbridge.kpbridge.service.ChatService;
 import com.kpbridge.kpbridge.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import java.util.Map;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final ChatService chatService;
 
     // 1. 충전 요청
     @PostMapping("/charge")
@@ -34,22 +37,27 @@ public class TransactionController {
         }
     }
 
-    // [여기가 중요!] 빨간 줄 났던 addProfit을 지우고, 이 코드로 바꾸세요!
+    // 3. 거래 주문 접수 (main.html 거래하기 버튼)
     @PostMapping("/trade")
-    public ResponseEntity<?> executeTrade(@RequestBody Map<String, Object> req, Principal principal) {
+    public ResponseEntity<?> submitTrade(@RequestBody Map<String, Object> req, Principal principal) {
         try {
             String coin = (String) req.get("coin");
             String route = (String) req.get("route");
-            
-            // 콤마가 제거된 숫자 문자열을 받아서 BigDecimal로 변환
-            BigDecimal amount = new BigDecimal(String.valueOf(req.get("amount")));
+            BigDecimal amount = new BigDecimal(String.valueOf(req.get("amount")).replace(",", ""));
 
-            // 서비스의 새로운 메서드 호출!
-            transactionService.executeTrade(principal.getName(), coin, route, amount);
-            
-            return ResponseEntity.ok("거래가 성공적으로 체결되었습니다.");
+            // 거래 주문 생성 (상태: 거래대기중)
+            Transaction tx = transactionService.submitOrder(principal.getName(), coin, route, amount);
+
+            // 채팅으로 자동 알림 메시지 발송
+            String chatMsg = String.format(
+                "📋 거래 주문이 접수되었습니다.\n\n코인: %s\n경로: %s\n금액: %,d KRW\n\n담당자 확인 후 거래를 진행합니다.",
+                coin, route, amount.longValue()
+            );
+            chatService.sendSystemMessage(principal.getName(), chatMsg);
+
+            return ResponseEntity.ok("거래 주문이 접수되었습니다.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("거래 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body("주문 실패: " + e.getMessage());
         }
     }
 }

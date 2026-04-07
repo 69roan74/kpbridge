@@ -80,6 +80,10 @@ public class AdminController {
         model.addAttribute("companyWallet", siteConfigService.get("company.wallet", "TKpBridge9xCzFm2nHqRsUvWy3D7K"));
         model.addAttribute("companyBank", siteConfigService.get("company.bank", "기업은행 123-45-6789012"));
 
+        // 입출금 승인 대기 목록
+        model.addAttribute("pendingDeposits", transactionService.getPendingDeposits());
+        model.addAttribute("pendingWithdraws", transactionService.getPendingWithdraws());
+
         return "admin";
     }
 
@@ -206,6 +210,36 @@ public class AdminController {
             transactionService.updateTradeStatus(txId, newStatus);
         }
         return ResponseEntity.ok(Map.of("result", "ok", "status", newStatus));
+    }
+
+    // ===== 입출금 승인/거절 =====
+
+    @PostMapping("/transaction/approve-deposit")
+    @ResponseBody
+    public ResponseEntity<?> approveDeposit(@RequestBody Map<String, Object> req) {
+        Long txId = Long.valueOf(req.get("txId").toString());
+        transactionService.approveDeposit(txId);
+        return ResponseEntity.ok(Map.of("result", "ok"));
+    }
+
+    @PostMapping("/transaction/approve-withdraw")
+    @ResponseBody
+    public ResponseEntity<?> approveWithdraw(@RequestBody Map<String, Object> req) {
+        try {
+            Long txId = Long.valueOf(req.get("txId").toString());
+            transactionService.approveWithdraw(txId);
+            return ResponseEntity.ok(Map.of("result", "ok"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/transaction/reject")
+    @ResponseBody
+    public ResponseEntity<?> rejectRequest(@RequestBody Map<String, Object> req) {
+        Long txId = Long.valueOf(req.get("txId").toString());
+        transactionService.rejectRequest(txId);
+        return ResponseEntity.ok(Map.of("result", "ok"));
     }
 
     // ===== 입금 정보 설정 =====

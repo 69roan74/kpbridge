@@ -22,27 +22,74 @@ public class TransactionService {
     private final MemberRepository memberRepository;
     private final ReferralService referralService;
 
+    /** 충전 신청 - 잔액 미반영, 관리자 승인 대기 */
     @Transactional
     public void charge(String userId, BigDecimal amount) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
-        member.setMyCoinBalance(member.getMyCoinBalance().add(amount));
-        memberRepository.save(member);
-        saveLog(member, "충전 (Deposit)", amount, "완료", null, null, null);
-        log.info("💰 충전 완료: 사용자={}, 금액={}", userId, amount);
+        Transaction tx = saveLog(member, "충전 (Deposit)", amount, "입금대기", null, null, null);
+        log.info("💰 충전 신청 접수: 사용자={}, 금액={}", userId, amount);
     }
 
+    /** 출금 신청 - 잔액 미차감, 관리자 승인 대기 */
     @Transactional
     public void withdraw(String userId, BigDecimal amount, String memo) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
         if (member.getMyCoinBalance().compareTo(amount) < 0) {
             throw new RuntimeException("잔액이 부족합니다.");
         }
-        member.setMyCoinBalance(member.getMyCoinBalance().subtract(amount));
-        memberRepository.save(member);
-        Transaction tx = saveLog(member, "출금 (Withdraw)", amount.negate(), "출금신청", null, null, null);
+        Transaction tx = saveLog(member, "출금 (Withdraw)", amount, "출금대기", null, null, null);
         tx.setMemo(memo);
         transactionRepository.save(tx);
-        log.info("💸 출금 신청: 사용자={}, 금액={}, 출금처={}", userId, amount, memo);
+        log.info("💸 출금 신청 접수: 사용자={}, 금액={}, 출금처={}", userId, amount, memo);
+    }
+
+    /** 관리자: 충전 승인 → 잔액 증가 */
+    @Transactional
+    public void approveDeposit(Long txId) {
+        Transaction tx = transactionRepository.findById(txId).orElseThrow();
+        Member member = tx.getMember();
+        member.setMyCoinBalance(member.getMyCoinBalance().add(tx.getAmount()));
+        memberRepository.save(member);
+        tx.setStatus("완료");
+        tx.setBalanceAfter(member.getMyCoinBalance());
+        transactionRepository.save(tx);
+        log.info("✅ 충전 승인: txId={}, 사용자={}, 금액={}", txId, member.getUserId(), tx.getAmount());
+    }
+
+    /** 관리자: 출금 승인 → 잔액 차감 */
+    @Transactional
+    public void approveWithdraw(Long txId) {
+        Transaction tx = transactionRepository.findById(txId).orElseThrow();
+        Member member = tx.getMember();
+        if (member.getMyCoinBalance().compareTo(tx.getAmount()) < 0) {
+            throw new RuntimeException("잔액 부족으로 출금 승인 불가");
+        }
+        member.setMyCoinBalance(member.getMyCoinBalance().subtract(tx.getAmount()));
+        memberRepository.save(member);
+        tx.setStatus("완료");
+        tx.setAmount(tx.getAmount().negate());
+        tx.setBalanceAfter(member.getMyCoinBalance());
+        transactionRepository.save(tx);
+        log.info("✅ 출금 승인: txId={}, 사용자={}, 금액={}", txId, member.getUserId(), tx.getAmount());
+    }
+
+    /** 관리자: 충전/출금 거절 */
+    @Transactional
+    public void rejectRequest(Long txId) {
+        Transaction tx = transactionRepository.findById(txId).orElseThrow();
+        tx.setStatus("거절");
+        transactionRepository.save(tx);
+        log.info("❌ 신청 거절: txId={}", txId);
+    }
+
+    /** 대기 중인 충전 신청 목록 */
+    public List<Transaction> getPendingDeposits() {
+        return transactionRepository.findByTypeContainingAndStatusOrderByDateDesc("충전", "입금대기");
+    }
+
+    /** 대기 중인 출금 신청 목록 */
+    public List<Transaction> getPendingWithdraws() {
+        return transactionRepository.findByTypeContainingAndStatusOrderByDateDesc("출금", "출금대기");
     }
 
     /**

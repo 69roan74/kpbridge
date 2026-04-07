@@ -15,4 +15,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // 특정 회원의 거래 주문 조회 (마이페이지용)
     List<Transaction> findByMemberIdAndTradeStatusNotNullOrderByDateDesc(Long memberId);
+
+    // 입금/출금 대기 중인 신청 조회 (관리자용)
+    List<Transaction> findByTypeContainingAndStatusOrderByDateDesc(String type, String status);
 }

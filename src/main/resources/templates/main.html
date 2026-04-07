@@ -112,16 +112,28 @@
             100% { transform: translateY(-80px); }
         }
 
-        /* [5. 거래하기 버튼] */
+        /* [5. 플로팅 버튼들] */
+        .floating-btns {
+            position: fixed; bottom: 40px; right: 40px;
+            display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+            z-index: 9999;
+        }
         .floating-trade-btn {
-            position: fixed; bottom: 100px; right: 40px;
             background: linear-gradient(135deg, #20c997 0%, #0ca678 100%);
             color: white; border: none; padding: 16px 32px; border-radius: 50px;
             font-size: 17px; font-weight: bold; cursor: pointer;
             box-shadow: 0 10px 25px rgba(32, 201, 151, 0.4);
-            z-index: 9999; display: flex; align-items: center; gap: 8px; transition: transform 0.3s;
+            display: flex; align-items: center; gap: 8px; transition: transform 0.3s;
         }
-        .floating-trade-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(32, 201, 151, 0.6); }
+        .floating-trade-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(32, 201, 151, 0.6); }
+        .floating-chat-btn {
+            background: linear-gradient(135deg, #007bff, #00d2ff);
+            color: white; border: none; padding: 14px 28px; border-radius: 50px;
+            font-size: 15px; font-weight: bold; cursor: pointer; text-decoration: none;
+            box-shadow: 0 8px 20px rgba(0,123,255,0.4);
+            display: flex; align-items: center; gap: 8px; transition: transform 0.3s;
+        }
+        .floating-chat-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,123,255,0.5); }
 
         /* [팝업 스타일] */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
@@ -150,9 +162,12 @@
             .footer-right { text-align: left; margin-top: 10px; }
             .footer-right a { margin-left: 0; margin-right: 15px; }
             .my-wallet h1 { font-size: 36px; }
-            .floating-trade-btn { bottom: 30px; right: 20px; }
-            .table-header { flex-direction: column; align-items: flex-start; }
-            .exchange-selectors { flex-wrap: wrap; }
+            .floating-btns { bottom: 24px; right: 16px; gap: 10px; }
+            .floating-trade-btn { padding: 14px 24px; font-size: 15px; }
+            .floating-chat-btn { padding: 12px 22px; font-size: 14px; }
+            .table-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .exchange-selectors { flex-wrap: nowrap; gap: 8px; }
+            .selector-group label { font-size: 11px; }
             .coin-table th, .coin-table td { padding: 10px 8px; font-size: 13px; white-space: nowrap; }
             .coin-table th:first-child, .coin-table td:first-child {
                 position: sticky; left: 0; background: white; z-index: 1;
@@ -310,9 +325,14 @@
     </div>
 
     <th:block th:if="${user != null}">
-        <button class="floating-trade-btn" onclick="openTradeModal()">
-            <span class="btn-icon">⚡</span> <span th:text="#{main.trade.button}">거래하기</span>
-        </button>
+        <div class="floating-btns">
+            <a href="/chat" class="floating-chat-btn">
+                💬 1:1 문의
+            </a>
+            <button class="floating-trade-btn" onclick="openTradeModal()">
+                <span class="btn-icon">⚡</span> <span th:text="#{main.trade.button}">거래하기</span>
+            </button>
+        </div>
     </th:block>
 
     <div id="tradeModal" class="modal-overlay">
@@ -371,7 +391,6 @@
                 </p>
             </div>
             <div class="footer-right">
-                <a href="/chat" style="color: #007bff; font-weight: bold; text-decoration: none;" th:if="${user != null}">💬 1:1 문의</a>
                 <a href="/about" target="_blank" th:text="#{footer.about}">서비스 소개</a>
                 <p style="margin-top: 10px; color: #999; font-size: 12px; max-width: 400px; line-height: 1.4;" th:text="#{footer.disclaimer}">
                     본 사이트는 암호화폐 가격 정보를 제공할 뿐 투자를 권유하지 않습니다.

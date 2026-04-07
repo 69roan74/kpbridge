@@ -80,10 +80,11 @@
                 <div class="hint">오늘 이전 날짜로 입력해주세요</div>
             </div>
 
-            <div class="section-divider">추천인 (선택)</div>
+            <div class="section-divider">추천인 코드 <span style="color:#dc3545;">*필수</span></div>
             <div class="form-group">
-                <label th:text="#{register.referral}">추천인 코드</label>
-                <input type="text" name="referralCode" th:placeholder="#{register.referral.placeholder}" style="text-transform:uppercase;">
+                <label>추천인 코드</label>
+                <input type="text" name="referralCode" placeholder="추천인 코드를 입력하세요" style="text-transform:uppercase;" required id="referralInput">
+                <div class="hint" style="color:#dc3545;">⚠️ 추천인 코드 없이는 가입이 불가합니다</div>
             </div>
 
             <button type="submit" class="btn-register" th:text="#{register.button}">가입하고 코인 받기</button>

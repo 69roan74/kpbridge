@@ -58,13 +58,14 @@ public class MemberService {
         String myCode = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         member.setReferralCode(myCode);
 
-        // 7. 추천인 코드가 있으면 referredBy 연결
-        if (inviteCode != null && !inviteCode.isBlank()) {
-            memberRepository.findByReferralCode(inviteCode.trim()).ifPresent(referrer -> {
-                member.setReferredBy(referrer);
-                member.setReferralAppliedYn("Y");
-            });
+        // 7. 추천인 코드 필수 검증 및 연결
+        if (inviteCode == null || inviteCode.isBlank()) {
+            throw new RuntimeException("추천인 코드는 필수입니다. 추천인에게 코드를 받아 입력해주세요.");
         }
+        Member referrer = memberRepository.findByReferralCode(inviteCode.trim())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 추천인 코드입니다. 다시 확인해주세요."));
+        member.setReferredBy(referrer);
+        member.setReferralAppliedYn("Y");
 
         // 8. 저장
         Member saved = memberRepository.save(member);

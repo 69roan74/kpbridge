@@ -114,6 +114,7 @@ public class ReferralService {
         Map<String, Object> node = new LinkedHashMap<>();
         node.put("userId", maskUserId(member.getUserId()));
         node.put("userName", maskUserName(member.getUserName()));
+        node.put("balance", member.getMyCoinBalance());
         node.put("level", 0);
         node.put("totalReward", referralRewardRepository.sumAmountByRecipientId(member.getId()));
         node.put("children", buildChildren(member, 1, maxDepth, new HashSet<>()));
@@ -132,8 +133,9 @@ public class ReferralService {
             Map<String, Object> childNode = new LinkedHashMap<>();
             childNode.put("userId", maskUserId(child.getUserId()));
             childNode.put("userName", maskUserName(child.getUserName()));
+            childNode.put("balance", child.getMyCoinBalance());
             childNode.put("level", currentLevel);
-            childNode.put("totalReward", referralRewardRepository.sumAmountByRecipientId(parent.getId()));
+            childNode.put("totalReward", referralRewardRepository.sumAmountByRecipientId(child.getId()));
             childNode.put("children", buildChildren(child, currentLevel + 1, maxDepth, new HashSet<>(visited)));
             result.add(childNode);
         }

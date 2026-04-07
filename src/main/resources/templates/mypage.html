@@ -136,8 +136,10 @@
             backdrop-filter: blur(4px);
         }
         .tree-modal-box {
-            background: white; border-radius: 20px; width: 700px; max-width: 95vw; max-height: 85vh;
-            overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.3); animation: popUp 0.3s ease;
+            background: white; border-radius: 20px;
+            width: 90vw; max-width: 1100px; max-height: 88vh;
+            overflow: hidden; display: flex; flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3); animation: popUp 0.3s ease;
         }
         .tree-modal-header {
             background: linear-gradient(135deg, #6f42c1, #007bff); color: white;
@@ -146,23 +148,69 @@
         }
         .tree-modal-header h2 { margin: 0; font-size: 20px; }
         .tree-close-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-        .tree-content { padding: 25px; }
+        .tree-content { padding: 20px; overflow: auto; flex: 1; }
 
-        /* 계보도 트리 */
-        .tree-root { }
-        .tree-node {
-            background: #f8f9ff; border: 1px solid #e0e7ff; border-radius: 12px;
-            padding: 12px 16px; margin: 8px 0; cursor: pointer;
-            transition: all 0.2s; position: relative;
+        /* ===== 오르그차트 트리 ===== */
+        .org-wrap { overflow-x: auto; overflow-y: auto; padding: 10px 20px 20px; min-height: 100px; }
+
+        .org-tree, .org-tree ul {
+            list-style: none; margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
         }
-        .tree-node:hover { background: #eef2ff; border-color: #6f42c1; }
-        .tree-node-self { background: linear-gradient(135deg, #e8f4ff, #f0f8ff); border-color: #007bff; border-width: 2px; }
-        .tree-node-header { display: flex; justify-content: space-between; align-items: center; }
-        .tree-node-name { font-weight: 700; font-size: 15px; color: #333; }
-        .tree-node-reward { font-size: 13px; color: #007bff; font-weight: 600; }
-        .tree-node-badge { font-size: 11px; background: #6f42c1; color: white; padding: 2px 8px; border-radius: 10px; }
-        .tree-children { margin-left: 30px; border-left: 2px dashed #c5d0f0; padding-left: 15px; }
-        .tree-empty { text-align: center; color: #999; padding: 40px; font-size: 15px; }
+        .org-tree ul { padding-top: 20px; position: relative; }
+
+        /* 자식 목록 위 세로선 */
+        .org-tree ul::before {
+            content: ''; position: absolute; top: 0; left: 50%;
+            border-left: 2px solid #c5d0f0; height: 20px; transform: translateX(-50%);
+        }
+        .org-tree li {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 0 12px; position: relative;
+        }
+        /* 형제 연결 가로선 */
+        .org-tree li::before, .org-tree li::after {
+            content: ''; position: absolute; top: 0;
+            border-top: 2px solid #c5d0f0; width: 50%; height: 20px;
+        }
+        .org-tree li::before { right: 50%; border-right: none; }
+        .org-tree li::after  { left: 50%;  border-left:  none; }
+        .org-tree li:only-child::before,
+        .org-tree li:only-child::after { display: none; }
+        .org-tree li:first-child::before { display: none; }
+        .org-tree li:last-child::after   { display: none; }
+
+        /* 노드 박스 */
+        .org-node {
+            position: relative; padding-top: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        /* 노드 → 자식 세로선 */
+        .org-node::after {
+            content: ''; display: block;
+            border-left: 2px solid #c5d0f0;
+            height: 20px; width: 0;
+        }
+        .org-node:not(:has(+ ul))::after { display: none; }
+
+        .org-box {
+            border-radius: 10px; padding: 10px 14px; min-width: 110px; max-width: 150px;
+            text-align: center; font-size: 12px; font-weight: 700;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12); cursor: default;
+            white-space: nowrap;
+        }
+        .org-box .ob-id   { font-size: 11px; opacity: 0.75; margin-bottom: 3px; }
+        .org-box .ob-name { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+        .org-box .ob-bal  { font-size: 11px; }
+
+        /* 잔액에 따른 색상 */
+        .oc-green  { background: #2f9e44; color: #fff; }
+        .oc-gold   { background: #e67700; color: #fff; }
+        .oc-yellow { background: #f59f00; color: #1a1a1a; }
+        .oc-red    { background: #e03131; color: #fff; }
+        .oc-blue   { background: #4dabf7; color: #1a1a1a; }
+
+        .tree-empty   { text-align: center; color: #999; padding: 40px; font-size: 15px; }
         .tree-loading { text-align: center; padding: 40px; }
         .tree-loading-spinner { width: 40px; height: 40px; border: 3px solid #eee; border-top-color: #007bff; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 15px; }
 
@@ -428,12 +476,11 @@
             });
         }
 
-        // ===== 계보도 트리 팝업 =====
+        // ===== 계보도 오르그차트 팝업 =====
         function openTreeModal() {
             document.getElementById('treeModal').style.display = 'flex';
             loadReferralTree();
         }
-
         function closeTreeModal() {
             document.getElementById('treeModal').style.display = 'none';
         }
@@ -442,47 +489,70 @@
             document.getElementById('treeContent').innerHTML = `
                 <div class="tree-loading">
                     <div class="tree-loading-spinner"></div>
-                    <p style="color: #999;">네트워크 불러오는 중...</p>
+                    <p style="color:#999;">네트워크 불러오는 중...</p>
                 </div>`;
-
-            fetch('/api/referral/tree', { headers: { 'Content-Type': 'application/json' } })
-            .then(res => res.json())
+            fetch('/api/referral/tree')
+            .then(r => r.json())
             .then(data => {
-                document.getElementById('treeContent').innerHTML = renderTree(data, true);
+                const wrap = document.createElement('div');
+                wrap.className = 'org-wrap';
+                const ul = document.createElement('ul');
+                ul.className = 'org-tree';
+                ul.appendChild(buildOrgLi(data, true));
+                wrap.appendChild(ul);
+                document.getElementById('treeContent').innerHTML = '';
+                document.getElementById('treeContent').appendChild(wrap);
             })
             .catch(() => {
-                document.getElementById('treeContent').innerHTML = '<p style="text-align:center;color:#999;padding:30px;">데이터를 불러오지 못했습니다.</p>';
+                document.getElementById('treeContent').innerHTML =
+                    '<p style="text-align:center;color:#999;padding:30px;">데이터를 불러오지 못했습니다.</p>';
             });
         }
 
-        function renderTree(node, isRoot) {
-            const children = node.children || [];
-            const reward = node.totalReward != null ? parseFloat(node.totalReward).toLocaleString('ko-KR', {maximumFractionDigits: 2}) : '0';
-            const levelBadge = isRoot ? '나' : `Lv.${node.level}`;
-            const nodeClass = isRoot ? 'tree-node tree-node-self' : 'tree-node';
-
-            let html = `<div class="${nodeClass}">
-                <div class="tree-node-header">
-                    <div>
-                        <span class="tree-node-badge">${levelBadge}</span>
-                        <span class="tree-node-name" style="margin-left:8px;">${escHtml(node.userName || node.userId)}</span>
-                    </div>
-                    <span class="tree-node-reward">+${reward} KP</span>
-                </div>
-            </div>`;
-
-            if (children.length > 0) {
-                html += '<div class="tree-children">';
-                for (const child of children) {
-                    html += renderTree(child, false);
-                }
-                html += '</div>';
-            }
-            return html;
+        /* 잔액 → 색상 클래스 */
+        function balanceColor(bal) {
+            const n = parseFloat(bal) || 0;
+            if (n >= 5000000) return 'oc-green';
+            if (n >= 2000000) return 'oc-gold';
+            if (n >= 500000)  return 'oc-yellow';
+            if (n >= 100000)  return 'oc-red';
+            return 'oc-blue';
         }
 
-        function escHtml(str) {
-            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        function fmtNum(v) {
+            return (parseFloat(v)||0).toLocaleString('ko-KR', {maximumFractionDigits:0});
+        }
+
+        function escHtml(s) {
+            return String(s).replace(/[&<>"']/g, c =>
+                ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function buildOrgLi(node, isRoot) {
+            const li = document.createElement('li');
+
+            /* 노드 박스 */
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'org-node';
+
+            const colorCls = isRoot ? 'oc-green' : balanceColor(node.balance);
+            const box = document.createElement('div');
+            box.className = `org-box ${colorCls}`;
+            box.innerHTML =
+                `<div class="ob-id">${escHtml(node.userId)}</div>` +
+                `<div class="ob-name">${escHtml(node.userName || node.userId)}</div>` +
+                `<div class="ob-bal">본인: ${fmtNum(node.balance)}</div>`;
+            nodeDiv.appendChild(box);
+            li.appendChild(nodeDiv);
+
+            /* 자식 재귀 */
+            const children = node.children || [];
+            if (children.length > 0) {
+                const ul = document.createElement('ul');
+                children.forEach(child => ul.appendChild(buildOrgLi(child, false)));
+                li.appendChild(ul);
+            }
+            return li;
         }
 
         // 모달 외부 클릭 시 닫기

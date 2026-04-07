@@ -8,6 +8,7 @@ import com.kpbridge.kpbridge.repository.MemberRepository;
 import com.kpbridge.kpbridge.repository.ReferralConfigRepository;
 import com.kpbridge.kpbridge.repository.ReferralRewardRepository;
 import com.kpbridge.kpbridge.repository.TransactionRepository;
+import com.kpbridge.kpbridge.service.ChatArchiveService;
 import com.kpbridge.kpbridge.service.ChatService;
 import com.kpbridge.kpbridge.service.ReferralService;
 import com.kpbridge.kpbridge.service.TransactionService;
@@ -35,6 +36,7 @@ public class AdminController {
     private final ReferralService referralService;
     private final TransactionService transactionService;
     private final ChatService chatService;
+    private final ChatArchiveService chatArchiveService;
 
     // 1. 대시보드 메인
     @GetMapping("")
@@ -195,4 +197,22 @@ public class AdminController {
         }
         return ResponseEntity.ok(Map.of("result", "ok", "status", newStatus));
     }
+
+    // ===== 채팅 아카이브 수동 실행 =====
+
+    /**
+     * 관리자가 특정 날짜 채팅을 수동으로 zip 저장
+     * GET /admin/chat/archive?date=2026-04-07  (date 없으면 어제)
+     */
+    @GetMapping("/chat/archive")
+    @ResponseBody
+    public ResponseEntity<String> manualArchive(
+            @RequestParam(required = false) String date) {
+        java.time.LocalDate targetDate = (date != null && !date.isBlank())
+                ? java.time.LocalDate.parse(date)
+                : java.time.LocalDate.now().minusDays(1);
+        String result = chatArchiveService.archiveDate(targetDate);
+        return ResponseEntity.ok(result);
+    }
+}
 }

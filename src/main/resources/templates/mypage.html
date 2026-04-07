@@ -400,7 +400,7 @@
                 <div id="depositUsdt">
                     <div class="info-label">입금 지갑 주소 (TRC20 네트워크)</div>
                     <div class="info-copy-box">
-                        <span class="info-value" id="companyWallet">TKpBridge9xCzFm2nHqRsUvWy3D7K</span>
+                        <span class="info-value" id="companyWallet" th:text="${companyWallet}">TKpBridge9xCzFm2nHqRsUvWy3D7K</span>
                         <button class="mini-copy-btn" onclick="copyElem('companyWallet')">복사</button>
                     </div>
                     <div class="info-hint">⚠️ TRC20(USDT) 네트워크만 지원 · 다른 네트워크 입금 시 손실</div>
@@ -409,7 +409,7 @@
                 <div id="depositKrw" style="display:none;">
                     <div class="info-label">입금 계좌</div>
                     <div class="info-copy-box">
-                        <span class="info-value" id="companyBank">기업은행 123-45-6789012</span>
+                        <span class="info-value" id="companyBank" th:text="${companyBank}">기업은행 123-45-6789012</span>
                         <button class="mini-copy-btn" onclick="copyElem('companyBank')">복사</button>
                     </div>
                     <div class="info-hint">예금주: KP브릿지 · 입금 후 아래 금액 입력</div>

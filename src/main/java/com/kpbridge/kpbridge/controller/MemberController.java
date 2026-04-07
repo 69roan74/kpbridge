@@ -7,6 +7,7 @@ import com.kpbridge.kpbridge.repository.ReferralRewardRepository;
 import com.kpbridge.kpbridge.service.CoinService;
 import com.kpbridge.kpbridge.service.MemberService;
 import com.kpbridge.kpbridge.service.ReferralService;
+import com.kpbridge.kpbridge.service.SiteConfigService;
 import com.kpbridge.kpbridge.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class MemberController {
     private final ReferralService referralService;
     private final ReferralRewardRepository referralRewardRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SiteConfigService siteConfigService;
 
     // 🚨 [비상구] 관리자 계정 생성/복구
     @GetMapping("/emergency-fix")
@@ -134,6 +136,10 @@ public class MemberController {
         // 내가 직접 추천한 사람 수
         model.addAttribute("directReferralCount",
                 memberRepository.findByReferredById(member.getId()).size());
+
+        // 입금 정보 (DB에서 동적으로 가져옴)
+        model.addAttribute("companyWallet", siteConfigService.get("company.wallet", "TKpBridge9xCzFm2nHqRsUvWy3D7K"));
+        model.addAttribute("companyBank", siteConfigService.get("company.bank", "기업은행 123-45-6789012"));
 
         return "mypage";
     }

@@ -11,6 +11,7 @@ import com.kpbridge.kpbridge.repository.TransactionRepository;
 import com.kpbridge.kpbridge.service.ChatArchiveService;
 import com.kpbridge.kpbridge.service.ChatService;
 import com.kpbridge.kpbridge.service.ReferralService;
+import com.kpbridge.kpbridge.service.SiteConfigService;
 import com.kpbridge.kpbridge.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,7 @@ public class AdminController {
     private final TransactionService transactionService;
     private final ChatService chatService;
     private final ChatArchiveService chatArchiveService;
+    private final SiteConfigService siteConfigService;
 
     // 1. 대시보드 메인
     @GetMapping("")
@@ -73,6 +75,10 @@ public class AdminController {
         Optional<ReferralConfig> globalConfig = referralConfigRepository.findByTargetType("GLOBAL");
         model.addAttribute("globalConfig", globalConfig.orElse(null));
         model.addAttribute("globalJoinBonus", referralService.getGlobalJoinBonus());
+
+        // 입금 정보 설정
+        model.addAttribute("companyWallet", siteConfigService.get("company.wallet", "TKpBridge9xCzFm2nHqRsUvWy3D7K"));
+        model.addAttribute("companyBank", siteConfigService.get("company.bank", "기업은행 123-45-6789012"));
 
         return "admin";
     }
@@ -200,6 +206,15 @@ public class AdminController {
             transactionService.updateTradeStatus(txId, newStatus);
         }
         return ResponseEntity.ok(Map.of("result", "ok", "status", newStatus));
+    }
+
+    // ===== 입금 정보 설정 =====
+
+    @PostMapping("/config/payment")
+    public String savePaymentConfig(@RequestParam String companyWallet, @RequestParam String companyBank) {
+        siteConfigService.set("company.wallet", companyWallet);
+        siteConfigService.set("company.bank", companyBank);
+        return "redirect:/admin";
     }
 
     // ===== 채팅 아카이브 다운로드 =====

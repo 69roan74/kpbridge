@@ -2,20 +2,33 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>정보 수정</title>
+    <title>KPBridge - 정보 수정</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .btn-save { width: 100%; background: #28a745; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding: 24px 16px 40px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 28px 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .page-header a { color: #007bff; text-decoration: none; font-size: 20px; padding: 4px; }
+        .page-header h2 { margin: 0; font-size: 20px; color: #333; }
+        .input-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #555; }
+        input { width: 100%; padding: 13px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; }
+        input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+        .btn-save { width: 100%; background: #007bff; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 8px; transition: background 0.2s; }
+        .btn-save:hover { background: #0056b3; }
+        .btn-cancel { display: block; text-align: center; margin-top: 14px; color: #666; text-decoration: none; font-size: 14px; padding: 8px; }
+        .divider { border: none; border-top: 1px solid #f0f0f0; margin: 24px 0; }
+        .btn-delete { background: none; border: none; color: #dc3545; text-decoration: underline; cursor: pointer; font-size: 14px; display: block; margin: 0 auto; padding: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>내 정보 수정</h2>
+        <div class="page-header">
+            <a th:href="@{/mypage}">←</a>
+            <h2>내 정보 수정</h2>
+        </div>
         <form th:action="@{/member/update}" method="post">
             <div class="input-group">
                 <label>이름</label>
@@ -23,20 +36,29 @@
             </div>
             <div class="input-group">
                 <label>전화번호</label>
-                <input type="text" name="phone" th:value="${member.phone}" required>
+                <input type="tel" name="phone" th:value="${member.phone}" id="phoneInput">
             </div>
             <div class="input-group">
                 <label>이메일</label>
-                <input type="email" name="email" th:value="${member.email}" required>
+                <input type="email" name="email" th:value="${member.email}">
             </div>
             <button type="submit" class="btn-save">수정 완료</button>
-            <a th:href="@{/mypage}" style="display:block; text-align:center; margin-top:15px; color:#666;">취소</a>
         </form>
-        <form th:action="@{/member/delete}" method="post" onsubmit="return confirm('정말 탈퇴하시겠습니까?');">
-            <button type="submit" style="color: red; background: none; border: none; text-decoration: underline; cursor: pointer;">
-                회원 탈퇴
-            </button>
+        <a th:href="@{/mypage}" class="btn-cancel">취소</a>
+
+        <hr class="divider">
+
+        <form th:action="@{/member/delete}" method="post" onsubmit="return confirm('정말 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.');">
+            <button type="submit" class="btn-delete">회원 탈퇴</button>
         </form>
     </div>
+    <script>
+        document.getElementById('phoneInput').addEventListener('input', function(e) {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length <= 3) e.target.value = v;
+            else if (v.length <= 7) e.target.value = v.slice(0,3) + '-' + v.slice(3);
+            else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
+        });
+    </script>
 </body>
 </html>

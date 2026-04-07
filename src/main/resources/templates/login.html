@@ -2,24 +2,32 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title th:text="'KPBridge - ' + #{login.title}">KPBridge - 로그인</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .login-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        .logo-link { text-decoration: none; display: block; text-align: center; margin-bottom: 10px; }
-        .logo-text { font-size: 32px; font-weight: bold; color: #007bff; margin: 0; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #333; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
-        .btn-login { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s; }
-        .btn-login:hover { background-color: #0056b3; }
-        .footer-links { text-align: center; margin-top: 25px; font-size: 14px; color: #666; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; }
+        .login-container { background: white; padding: 36px 28px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .logo-link { text-decoration: none; display: block; text-align: center; margin-bottom: 8px; }
+        .logo-text { font-size: 28px; font-weight: bold; color: #007bff; margin: 0; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 28px; font-size: 14px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: #333; }
+        input { width: 100%; padding: 13px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; /* 16px prevents iOS zoom */ transition: border-color 0.2s; }
+        input:focus { border-color: #007bff; outline: none; }
+        .btn-login { width: 100%; padding: 15px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 8px; transition: background 0.2s; }
+        .btn-login:hover { background: #0056b3; }
+        .footer-links { text-align: center; margin-top: 22px; font-size: 14px; color: #666; }
         .footer-links a { color: #007bff; text-decoration: none; font-weight: bold; }
-        .error-msg { color: #f82b60; text-align: center; margin-bottom: 15px; font-size: 14px; font-weight: bold; }
-        .lang-toggle { text-align: right; margin-bottom: 10px; }
-        .lang-toggle a { font-size: 12px; padding: 3px 9px; border: 1px solid #ddd; border-radius: 20px; text-decoration: none; color: #555; margin-left: 5px; }
+        .error-msg { color: #f82b60; text-align: center; margin-bottom: 16px; font-size: 14px; font-weight: bold; background: #fff0f3; padding: 10px; border-radius: 8px; }
+        .lang-toggle { text-align: right; margin-bottom: 12px; }
+        .lang-toggle a { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 20px; text-decoration: none; color: #555; margin-left: 5px; }
+
+        @media (max-width: 400px) {
+            body { padding: 12px; align-items: flex-start; padding-top: 40px; }
+            .login-container { padding: 28px 20px; border-radius: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -40,17 +48,18 @@
         <form th:action="@{/login}" method="post">
             <div class="form-group">
                 <label th:text="#{login.id}">아이디</label>
-                <input type="text" name="username" required>
+                <input type="text" name="username" autocomplete="username" required>
             </div>
             <div class="form-group">
                 <label th:text="#{login.password}">비밀번호</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password" autocomplete="current-password" required>
             </div>
             <button type="submit" class="btn-login" th:text="#{login.button}">로그인</button>
         </form>
 
         <div class="footer-links">
-            <span th:text="#{login.register.prompt}">아직 계정이 없으신가요?</span> <a href="/register" th:text="#{login.register.link}">회원가입 하러가기</a>
+            <span th:text="#{login.register.prompt}">아직 계정이 없으신가요?</span>
+            <a href="/register" th:text="#{login.register.link}">회원가입 하러가기</a>
         </div>
     </div>
 </body>

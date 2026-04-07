@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>1:1 채팅 관리 - KPBridge Admin</title>
     <style>
@@ -76,7 +77,7 @@
         .chat-item.has-unread .chat-name { color: #dc3545; }
         .chat-preview {
             font-size: 13px; color: #888; margin-top: 3px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(400px, 50vw);
         }
         .chat-item.has-unread .chat-preview { color: #555; font-weight: 500; }
 

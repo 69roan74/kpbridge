@@ -44,6 +44,25 @@
         @media (max-width: 900px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
+
+        /* 긴급 알림 박동 애니메이션 */
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 4px 18px rgba(220,53,69,0.4); }
+            50%       { box-shadow: 0 4px 28px rgba(220,53,69,0.75); }
+        }
+
+        /* 사이드바 배지 깜빡임 */
+        .blink-badge {
+            display: inline-block;
+            background: #fa5252; color: white;
+            padding: 2px 7px; border-radius: 10px;
+            font-size: 11px; margin-left: 6px;
+            animation: blink 1.2s step-start infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -56,9 +75,9 @@
         <div class="menu-item" onclick="showSection('orders', this)">📋 거래 주문 관리</div>
         <div class="menu-item" onclick="showSection('referral', this)">🔗 추천 요율 설정</div>
         <div class="menu-item" onclick="showSection('faq', this)">💡 FAQ 관리</div>
-        <a href="/admin/chat" class="menu-item">
+        <a href="/admin/chat" class="menu-item" th:style="${totalUnread > 0} ? 'color:white; background:#3d0000;' : ''">
             💬 1:1 채팅
-            <span th:if="${totalUnread > 0}" style="background:#fa5252;color:white;padding:2px 7px;border-radius:10px;font-size:11px;margin-left:5px;" th:text="${totalUnread}"></span>
+            <span th:if="${totalUnread > 0}" class="blink-badge" th:text="${totalUnread} + '!'"></span>
         </a>
         <a href="/" class="menu-item" style="margin-top: 20px; color: #fa5252;">🚪 메인으로 나가기</a>
     </div>
@@ -68,6 +87,28 @@
         <!-- 대시보드 -->
         <div id="dashboard" class="section active">
             <h1>관리자 대시보드</h1>
+
+            <!-- 미확인 채팅 긴급 알림 -->
+            <a href="/admin/chat" th:if="${totalUnread > 0}" style="text-decoration:none; display:block; margin-bottom:20px;">
+                <div style="background:linear-gradient(135deg,#dc3545,#c0392b); color:white; border-radius:12px; padding:18px 24px; display:flex; align-items:center; gap:16px; box-shadow:0 4px 18px rgba(220,53,69,0.4); animation:alertPulse 2s infinite;">
+                    <span style="font-size:32px; flex-shrink:0;">🚨</span>
+                    <div style="flex:1;">
+                        <strong style="font-size:16px;">미확인 고객 메시지 <span th:text="${totalUnread}"></span>건</strong>
+                        <p style="margin:4px 0 0; font-size:13px; opacity:0.9;">클릭하여 채팅 관리로 바로 이동 →</p>
+                    </div>
+                    <span style="font-size:22px; opacity:0.7;">›</span>
+                </div>
+            </a>
+
+            <!-- 대기 중인 거래 주문 알림 -->
+            <div th:if="${!#lists.isEmpty(pendingOrders)}" style="background:#fff3cd; border:1px solid #ffc107; border-radius:12px; padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="showSection('orders', document.querySelector('[onclick*=orders]'))">
+                <span style="font-size:26px;">📋</span>
+                <div>
+                    <strong>거래 대기 주문 <span th:text="${#lists.size(pendingOrders)}"></span>건</strong>
+                    <p style="margin:3px 0 0; font-size:13px; color:#856404;">처리가 필요한 주문이 있습니다. 거래 주문 관리 탭을 확인하세요.</p>
+                </div>
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">총 회원 수</div>

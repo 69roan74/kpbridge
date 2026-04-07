@@ -63,8 +63,7 @@ public class ChatController {
 
     @GetMapping("/admin/chat")
     public String adminChatList(Model model) {
-        List<Member> members = chatService.getMembersWithChat();
-        model.addAttribute("members", members);
+        model.addAttribute("chatList", chatService.getChatList());
         model.addAttribute("totalUnread", chatService.getTotalUnread());
         return "admin-chat";
     }

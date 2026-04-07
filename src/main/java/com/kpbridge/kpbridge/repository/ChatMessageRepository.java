@@ -17,6 +17,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     long countBySenderTypeAndIsReadFalse(String senderType);
 
     // 채팅이 있는 회원 목록 (가장 최근 메시지 기준)
-    @Query("SELECT DISTINCT m.id FROM ChatMessage m ORDER BY m.sentAt DESC")
+    @Query("SELECT m.member.id FROM ChatMessage m GROUP BY m.member.id ORDER BY MAX(m.sentAt) DESC")
     List<Long> findDistinctMemberIds();
 }

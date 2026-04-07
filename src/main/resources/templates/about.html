@@ -33,8 +33,11 @@
 <body>
     <nav class="navbar">
         <a th:href="@{/}" class="logo">KPBridge</a>
-        <div>
+        <div style="display: flex; align-items: center; gap: 15px; font-size: 14px;">
             <a th:href="@{/}" style="text-decoration: none; color: #666; font-weight: 600;">메인으로 돌아가기</a>
+            <span style="color: #ddd;">|</span>
+            <a th:href="@{/login}" style="text-decoration: none; color: #007bff; font-weight: 700;">로그인</a>
+            <a th:href="@{/register}" style="text-decoration: none; color: #20c997; font-weight: 700;">회원가입</a>
         </div>
     </nav>
 

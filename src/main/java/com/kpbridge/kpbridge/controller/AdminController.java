@@ -18,7 +18,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -198,21 +202,29 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("result", "ok", "status", newStatus));
     }
 
-    // ===== 채팅 아카이브 수동 실행 =====
+    // ===== 채팅 아카이브 다운로드 =====
 
     /**
-     * 관리자가 특정 날짜 채팅을 수동으로 zip 저장
-     * GET /admin/chat/archive?date=2026-04-07  (date 없으면 어제)
+     * 특정 날짜 채팅 내역을 zip으로 생성해 브라우저로 직접 다운로드
+     * GET /admin/chat/archive?date=2026-04-07  (date 없으면 오늘)
      */
     @GetMapping("/chat/archive")
-    @ResponseBody
-    public ResponseEntity<String> manualArchive(
+    public ResponseEntity<byte[]> downloadArchive(
             @RequestParam(required = false) String date) {
-        java.time.LocalDate targetDate = (date != null && !date.isBlank())
-                ? java.time.LocalDate.parse(date)
-                : java.time.LocalDate.now().minusDays(1);
-        String result = chatArchiveService.archiveDate(targetDate);
-        return ResponseEntity.ok(result);
+        LocalDate targetDate = (date != null && !date.isBlank())
+                ? LocalDate.parse(date)
+                : LocalDate.now();
+
+        byte[] zipBytes = chatArchiveService.buildZipBytes(targetDate);
+        if (zipBytes == null || zipBytes.length == 0) {
+            return ResponseEntity.noContent().build();
+        }
+
+        String filename = "chat-" + targetDate + ".zip";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(zipBytes.length)
+                .body(zipBytes);
     }
-}
 }

@@ -155,8 +155,61 @@ public class ChatArchiveService {
     }
 
     /**
-     * 관리자가 수동으로 특정 날짜 아카이브 생성 (테스트/복구용)
-     * POST /api/admin/chat/archive?date=2026-04-07
+     * 브라우저 다운로드용: 특정 날짜 채팅을 zip 바이트로 반환
+     * 파일 저장 없이 메모리에서 바로 생성 → 응답으로 전송
+     */
+    public byte[] buildZipBytes(LocalDate date) {
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd   = date.atTime(23, 59, 59);
+
+        List<Long> memberIds = chatMessageRepository.findDistinctMemberIds();
+        if (memberIds.isEmpty()) return null;
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
+
+            int count = 0;
+            for (Long memberId : memberIds) {
+                Member member = memberRepository.findById(memberId).orElse(null);
+                if (member == null) continue;
+
+                List<ChatMessage> msgs = chatMessageRepository
+                        .findByMemberIdOrderBySentAtAsc(memberId)
+                        .stream()
+                        .filter(m -> !m.getSentAt().isBefore(dayStart) && !m.getSentAt().isAfter(dayEnd))
+                        .toList();
+
+                if (msgs.isEmpty()) continue;
+
+                zos.putNextEntry(new ZipEntry(member.getUserId() + "_" + date.format(DATE_FMT) + ".txt"));
+
+                String header = String.format(
+                        "=== KPBridge 채팅 아카이브 ===\n" +
+                        "회원: %s (%s) | 날짜: %s | 메시지: %d건\n%s\n\n",
+                        member.getUserName(), member.getUserId(),
+                        date.format(DATE_FMT), msgs.size(), "=".repeat(40));
+                zos.write(header.getBytes(StandardCharsets.UTF_8));
+
+                for (ChatMessage msg : msgs) {
+                    String who  = "USER".equals(msg.getSenderType()) ? "[" + member.getUserId() + "]" : "[관리자]";
+                    String line = msg.getSentAt().format(TIME_FMT) + " " + who + " " + msg.getContent() + "\n";
+                    zos.write(line.getBytes(StandardCharsets.UTF_8));
+                }
+                zos.closeEntry();
+                count++;
+            }
+            if (count == 0) return null;
+            zos.finish();
+            return baos.toByteArray();
+
+        } catch (IOException e) {
+            log.error("zip 생성 실패: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 관리자가 수동으로 특정 날짜 아카이브 서버 저장 (백업용)
      */
     public String archiveDate(LocalDate date) {
         LocalDateTime dayStart = date.atStartOfDay();

@@ -178,6 +178,10 @@
                 <span th:text="${user.userName} + '님'" style="font-weight: 600;"></span>
                 <span style="color: #ddd;">|</span>
                 <a th:href="@{/mypage}" style="color: #007bff; font-weight: bold; text-decoration: none;" th:text="#{nav.mypage}">마이페이지</a>
+                <th:block th:if="${user.role == 'ADMIN'}">
+                    <span style="color: #ddd;">|</span>
+                    <a href="/admin" style="color: #dc3545; font-weight: bold; text-decoration: none;">⚙️ 관리자</a>
+                </th:block>
                 <span style="color: #ddd;">|</span>
                 <a href="/logout" style="color: #666; text-decoration: none;" th:text="#{nav.logout}">로그아웃</a>
             </th:block>

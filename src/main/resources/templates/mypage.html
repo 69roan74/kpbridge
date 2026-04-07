@@ -267,6 +267,8 @@
             <span th:text="${member.userName} + '님'" style="font-weight: bold;"></span>
             <a th:href="@{/(lang=ko)}" class="lang-btn">KO</a>
             <a th:href="@{/(lang=en)}" class="lang-btn">EN</a>
+            <a th:if="${member.role == 'ADMIN'}" href="/admin"
+               style="color: #dc3545; font-weight: bold; text-decoration: none; font-size: 14px;">⚙️ 관리자</a>
             <a href="/logout" style="color: #666; text-decoration: none;" th:text="#{nav.logout}">로그아웃</a>
         </div>
     </nav>

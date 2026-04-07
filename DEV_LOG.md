@@ -1,6 +1,6 @@
 # KPBridge 개발 로그
 
-> 마지막 업데이트: 2026-04-07
+> 마지막 업데이트: 2026-04-07 (2차 세션)
 
 ---
 
@@ -241,5 +241,47 @@ src/main/resources/templates/
 
 ---
 
+---
+
+## 2차 세션 작업 내역 (2026-04-07 오후)
+
+### ✅ 입출금 관리자 승인 시스템
+- 충전/출금 신청 → 즉시 잔액 반영 ❌ → **관리자 승인 후 반영**으로 변경
+- `TransactionService`: `approveDeposit()`, `approveWithdraw()`, `rejectRequest()` 추가
+- `TransactionRepository`: `findByTypeContainingAndStatusOrderByDateDesc()` 추가
+- `AdminController`: 승인/거절 POST 엔드포인트 3개 추가
+- `admin.html`:
+  - 사이드바 **💳 입출금 승인** 메뉴 추가 (대기 건수 뱃지)
+  - 대시보드 파란 알림 배너 추가
+  - 충전/출금 각각 테이블 + 승인/거절 버튼
+
+### ✅ 채팅 UI 개선
+- `admin-chat-room.html`: max-width 제거 → 화면 꽉 채움
+- 메시지 `justify-content: flex-end` → 카카오톡처럼 아래서부터 표시
+- 말풍선 `max-width: 90%`, 패딩/폰트 확대
+- 모바일에서 패딩 제거, 모서리 각지게
+
+### ✅ 관리자 버튼 네브바 추가
+- `main.html`, `mypage.html`: ADMIN 역할일 때 빨간 **⚙️ 관리자** 버튼 표시
+
+### ✅ 메인 페이지 플로팅 버튼 개편
+- 1:1 문의 파란 플로팅 버튼 거래하기 **위에** 추가
+- 두 버튼 세로로 묶어서 우하단 고정
+
+### ✅ 거래소 선택 모바일 정렬
+- 국내/해외 드롭다운 버튼 모바일에서 한 줄 나란히 표시
+- 버튼 크기 축소 (padding, font-size, img 사이즈)
+
+### ✅ 버그 수정
+- `ChatMessageRepository.findDistinctMemberIds()`: `m.id` → `m.member.id` GROUP BY 수정 (치명적 버그)
+
+---
+
+## 내일 할 일
+- 시장 분석 섹션 UI 개선 (코인 시세 테이블 하단 부분)
+- 모바일 화면 추가 점검
+
+---
+
 ## 남은 작업 / 추후 수정 예정
-- 테스트 중 발견된 버그 수정 예정
+- 시장분석 금액 표시 부분 상세 개선 (다음 세션)

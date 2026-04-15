@@ -357,34 +357,50 @@
             </div>
             <input type="hidden" id="selectedCoin" value="BTC">
 
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <div style="flex: 1;">
-                    <label class="input-label" th:text="#{trade.buy.label}">매수 (From)</label>
-                    <div class="exchange-card selected" id="buyCard" onclick="toggleExchange('buy')">
-                        <img id="buyImg" src="https://www.google.com/s2/favicons?sz=64&domain=binance.com">
-                        <span id="buyText">Binance</span>
-                    </div>
+            <!-- 매수/매도 거래소 선택 -->
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="flex:1;">
+                    <label class="input-label">매수 From (해외)</label>
+                    <select id="buyEx" class="modal-input" style="padding:10px;" onchange="onExchangeChange()">
+                        <option value="binance">Binance</option>
+                        <option value="okx">OKX</option>
+                        <option value="htx">HTX</option>
+                        <option value="gate">Gate.io</option>
+                    </select>
                 </div>
-                <div style="display: flex; align-items: center; padding-top: 25px; color: #ccc;">▶</div>
-                <div style="flex: 1;">
-                    <label class="input-label" th:text="#{trade.sell.label}">매도 (To)</label>
-                    <div class="exchange-card selected" id="sellCard" onclick="toggleExchange('sell')">
-                        <img id="sellImg" src="https://www.google.com/s2/favicons?sz=64&domain=upbit.com">
-                        <span id="sellText">Upbit</span>
-                    </div>
+                <div style="display:flex; align-items:center; padding-top:25px; color:#ccc; font-size:18px;">▶</div>
+                <div style="flex:1;">
+                    <label class="input-label">매도 To (국내)</label>
+                    <select id="sellEx" class="modal-input" style="padding:10px;" onchange="onExchangeChange()">
+                        <option value="upbit">Upbit</option>
+                        <option value="bithumb">Bithumb</option>
+                    </select>
                 </div>
             </div>
 
-            <input type="hidden" id="buyEx" value="Binance">
-            <input type="hidden" id="sellEx" value="Upbit">
+            <!-- 김프 표시 -->
+            <div id="kimpBox" style="text-align:center; margin:10px 0 4px; font-size:13px; color:#868e96; min-height:20px;">
+                <span id="kimpText">거래소 선택 후 실시간 김프를 불러옵니다...</span>
+            </div>
 
-            <label class="input-label" th:text="#{trade.amount.krw}">투자 금액 (KRW)</label>
+            <!-- 투자 금액 단위 선택 -->
+            <label class="input-label" style="margin-top:8px;">투자 금액 단위</label>
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                <button id="unitKrw" onclick="setUnit('KRW')" style="flex:1; padding:8px; border-radius:8px; border:2px solid #007bff; background:#007bff; color:#fff; font-weight:700; cursor:pointer;">KRW (원화)</button>
+                <button id="unitUsdt" onclick="setUnit('USDT')" style="flex:1; padding:8px; border-radius:8px; border:2px solid #dee2e6; background:#fff; color:#888; font-weight:700; cursor:pointer;">USDT (테더)</button>
+            </div>
+
+            <label class="input-label">
+                <span id="amountLabel">투자 금액 (KRW)</span>
+            </label>
             <input type="tel" id="tradeAmount" class="modal-input" placeholder="0" onkeyup="inputNumberFormat(this); updateExpectedProfit();">
 
-            <div id="expectedProfitBox" style="display:none; background:#f0fff4; border:1px solid #b2f2bb; border-radius:8px; padding:10px 14px; margin-top:10px; font-size:14px; color:#2f9e44;">
-                <div style="font-weight:700; margin-bottom:2px;">📈 예상 수익금</div>
-                <div id="expectedProfitText" style="font-size:16px; font-weight:800;"></div>
-                <div style="font-size:11px; color:#868e96; margin-top:4px;">* 실제 수익은 시장 상황에 따라 달라질 수 있습니다.</div>
+            <!-- 예상 수익금 -->
+            <div id="expectedProfitBox" style="display:none; background:#f0fff4; border:1px solid #b2f2bb; border-radius:8px; padding:12px 14px; margin-top:10px;">
+                <div style="font-size:12px; color:#2f9e44; font-weight:700; margin-bottom:4px;">📈 예상 수익금 (현재 김프 기준)</div>
+                <div id="expectedProfitText" style="font-size:18px; font-weight:800; color:#2f9e44;"></div>
+                <div id="kimpRateText" style="font-size:12px; color:#868e96; margin-top:3px;"></div>
+                <div style="font-size:11px; color:#aaa; margin-top:2px;">* 실제 수익은 시장 상황에 따라 달라질 수 있습니다.</div>
             </div>
 
             <button onclick="submitTrade()" class="confirm-btn" th:text="#{trade.submit}">주문 전송</button>
@@ -445,26 +461,57 @@
         return headers;
     }
 
+    // ===== 거래 모달 상태 =====
+    let _tradeUnit = 'KRW';       // 'KRW' or 'USDT'
+    let _kimp = null;             // 현재 김프 % (null = 미조회)
+    let _exchRate = 1350;         // USDT→KRW 환율 (API에서 갱신)
+
     function selectCoin(el, val) {
         document.querySelectorAll('.exchange-grid .exchange-card').forEach(c => c.classList.remove('selected'));
         el.classList.add('selected');
         document.getElementById('selectedCoin').value = val;
+        fetchKimp();
     }
-    const exList = [
-        { name: 'Binance', img: 'https://www.google.com/s2/favicons?sz=64&domain=binance.com' },
-        { name: 'Upbit', img: 'https://www.google.com/s2/favicons?sz=64&domain=upbit.com' },
-        { name: 'OKX', img: 'https://www.google.com/s2/favicons?sz=64&domain=okx.com' },
-        { name: 'Bithumb', img: 'https://www.google.com/s2/favicons?sz=64&domain=bithumb.com' }
-    ];
-    function toggleExchange(type) {
-        const currentVal = document.getElementById(type + 'Ex').value;
-        let idx = exList.findIndex(e => e.name === currentVal);
-        idx = (idx + 1) % exList.length;
-        const next = exList[idx];
-        document.getElementById(type + 'Ex').value = next.name;
-        document.getElementById(type + 'Text').innerText = next.name;
-        document.getElementById(type + 'Img').src = next.img;
+
+    function setUnit(unit) {
+        _tradeUnit = unit;
+        document.getElementById('unitKrw').style.cssText  = 'flex:1;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;border:2px solid ' + (unit==='KRW' ? '#007bff;background:#007bff;color:#fff' : '#dee2e6;background:#fff;color:#888');
+        document.getElementById('unitUsdt').style.cssText = 'flex:1;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;border:2px solid ' + (unit==='USDT' ? '#007bff;background:#007bff;color:#fff' : '#dee2e6;background:#fff;color:#888');
+        document.getElementById('amountLabel').textContent = unit === 'KRW' ? '투자 금액 (KRW)' : '투자 금액 (USDT / Tether)';
+        document.getElementById('tradeAmount').value = '';
+        document.getElementById('expectedProfitBox').style.display = 'none';
     }
+
+    function onExchangeChange() { fetchKimp(); }
+
+    function fetchKimp() {
+        const foreign  = document.getElementById('buyEx').value;
+        const domestic = document.getElementById('sellEx').value;
+        const coin     = document.getElementById('selectedCoin').value;
+        document.getElementById('kimpText').textContent = '⏳ 실시간 김프 조회 중...';
+        _kimp = null;
+        fetch('/api/prices?domestic=' + domestic + '&foreign=' + foreign)
+            .then(r => r.json())
+            .then(data => {
+                if (data.exchangeRate) _exchRate = data.exchangeRate;
+                const found = (data.coins || []).find(c => c.symbol === coin);
+                if (found) {
+                    _kimp = found.kimchiPremium;
+                    const sign = _kimp >= 0 ? '+' : '';
+                    const color = _kimp > 0 ? '#f03e3e' : (_kimp < 0 ? '#1971c2' : '#555');
+                    document.getElementById('kimpText').innerHTML =
+                        '현재 ' + foreign.toUpperCase() + ' → ' + domestic.toUpperCase() +
+                        ' 김프 : <strong style="color:' + color + ';font-size:15px;">' + sign + _kimp.toFixed(2) + '%</strong>';
+                } else {
+                    document.getElementById('kimpText').textContent = '해당 코인의 김프를 가져올 수 없습니다.';
+                }
+                updateExpectedProfit();
+            })
+            .catch(() => {
+                document.getElementById('kimpText').textContent = '❌ 시세 조회 실패. 잠시 후 다시 시도해주세요.';
+            });
+    }
+
     function inputNumberFormat(obj) { obj.value = comma(uncomma(obj.value)); }
     function comma(str) { return String(str).replace(/(\d)(?=(?:\d{3})+(?!\d))/g, '$1,'); }
     function uncomma(str) { return String(str).replace(/[^\d]+/g, ''); }
@@ -472,32 +519,47 @@
     function updateExpectedProfit() {
         const raw = Number(uncomma(document.getElementById('tradeAmount').value));
         const box = document.getElementById('expectedProfitBox');
-        const txt = document.getElementById('expectedProfitText');
-        if (!raw || raw <= 0) { box.style.display = 'none'; return; }
-        const min = Math.floor(raw * 0.035).toLocaleString();
-        const max = Math.floor(raw * 0.050).toLocaleString();
-        txt.textContent = '+' + min + ' ~ +' + max + ' KP  (3.5% ~ 5.0%)';
+        if (!raw || raw <= 0 || _kimp === null) { box.style.display = 'none'; return; }
+        // USDT 입력이면 KRW로 환산
+        const amountKrw = _tradeUnit === 'USDT' ? raw * _exchRate : raw;
+        const profit = Math.round(amountKrw * _kimp / 100);
+        const sign = profit >= 0 ? '+' : '';
+        document.getElementById('expectedProfitText').textContent =
+            sign + profit.toLocaleString() + ' KP';
+        document.getElementById('kimpRateText').textContent =
+            '김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '% 기준  |  환산금액 ' + Math.round(amountKrw).toLocaleString() + ' KRW';
         box.style.display = 'block';
     }
 
     function submitTrade() {
         const coin = document.getElementById('selectedCoin').value;
-        const buy = document.getElementById('buyEx').value;
+        const buy  = document.getElementById('buyEx').value;
         const sell = document.getElementById('sellEx').value;
-        const rawAmount = document.getElementById('tradeAmount').value.replace(/,/g, '');
+        const rawInput = Number(uncomma(document.getElementById('tradeAmount').value));
 
-        if (buy === sell) return alert(_i18n.errSame);
-        if (!rawAmount || rawAmount <= 0) return alert(_i18n.errAmount);
+        if (!rawInput || rawInput <= 0) return alert(_i18n.errAmount);
 
-        const route = buy + " -> " + sell;
-        const minProfit = Math.floor(rawAmount * 0.035).toLocaleString();
-        const maxProfit = Math.floor(rawAmount * 0.050).toLocaleString();
-        if(!confirm(`${_i18n.confirmTitle}\n\n${coin}\n${route}\n${Number(rawAmount).toLocaleString()} KRW\n\n📈 예상 수익금: +${minProfit} ~ +${maxProfit} KP (3.5% ~ 5.0%)\n\n${_i18n.confirmProceed}`)) return;
+        // KRW 환산 (USDT 입력 시 환율 적용)
+        const amountKrw = _tradeUnit === 'USDT' ? Math.round(rawInput * _exchRate) : rawInput;
+        const route = buy.toUpperCase() + ' -> ' + sell.toUpperCase();
+
+        let profitLine = '';
+        if (_kimp !== null) {
+            const profit = Math.round(amountKrw * _kimp / 100);
+            const sign = profit >= 0 ? '+' : '';
+            profitLine = '\n📈 예상 수익금: ' + sign + profit.toLocaleString() + ' KP  (김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '%)';
+        }
+
+        const unitDisplay = _tradeUnit === 'USDT'
+            ? rawInput.toLocaleString() + ' USDT ≈ ' + amountKrw.toLocaleString() + ' KRW'
+            : amountKrw.toLocaleString() + ' KRW';
+
+        if (!confirm(`${_i18n.confirmTitle}\n\n${coin}  |  ${route}\n${unitDisplay}${profitLine}\n\n${_i18n.confirmProceed}`)) return;
 
         fetch('/api/trans/trade', {
             method: 'POST',
             headers: getCsrfHeaders(),
-            body: JSON.stringify({ coin: coin, route: route, amount: rawAmount })
+            body: JSON.stringify({ coin: coin, route: route, amount: amountKrw })
         }).then(res => {
             if (res.ok) {
                 alert(_i18n.successLine1 + '\n\n' + _i18n.successLine2);
@@ -575,7 +637,11 @@
         });
     }
 
-    function openTradeModal() { document.getElementById('tradeModal').style.display = 'flex'; }
+    function openTradeModal() {
+        document.getElementById('tradeModal').style.display = 'flex';
+        setUnit('KRW');
+        fetchKimp();
+    }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     setInterval(updatePrices, 5000);

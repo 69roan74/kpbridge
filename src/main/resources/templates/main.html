@@ -146,6 +146,9 @@
         .exchange-card.selected { border-color: #007bff; background: #e7f1ff; color: #007bff; font-weight: bold; }
         .exchange-card img { width: 32px; height: 32px; object-fit: contain; }
         .exchange-card span { font-size: 13px; }
+        .ex-sel-btn { display:inline-flex; align-items:center; padding:6px 10px; border-radius:8px; border:2px solid #dee2e6; background:#fff; color:#555; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+        .ex-sel-btn:hover { border-color: #007bff; color:#007bff; }
+        .ex-sel-btn.active { border-color:#007bff; background:#e7f1ff; color:#007bff; }
         .confirm-btn { background: #007bff; color: white; border: none; padding: 15px 0; width: 100%; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 20px; }
         .close-btn { background: transparent; border: none; color: #999; cursor: pointer; font-size: 14px; text-decoration: underline; margin-top: 10px; }
 
@@ -358,23 +361,37 @@
             <input type="hidden" id="selectedCoin" value="BTC">
 
             <!-- 매수/매도 거래소 선택 -->
+            <input type="hidden" id="buyEx" value="binance">
+            <input type="hidden" id="sellEx" value="upbit">
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <div style="flex:1;">
-                    <label class="input-label">매수 From (해외)</label>
-                    <select id="buyEx" class="modal-input" style="padding:10px;" onchange="onExchangeChange()">
-                        <option value="binance">Binance</option>
-                        <option value="okx">OKX</option>
-                        <option value="htx">HTX</option>
-                        <option value="gate">Gate.io</option>
-                    </select>
+                    <label class="input-label">매수 From</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button class="ex-sel-btn active" data-group="buy" data-val="binance" onclick="selectEx('buy','binance',this)">
+                            <img src="https://www.google.com/s2/favicons?sz=32&domain=binance.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">Binance
+                        </button>
+                        <button class="ex-sel-btn" data-group="buy" data-val="okx" onclick="selectEx('buy','okx',this)">
+                            <img src="https://www.google.com/s2/favicons?sz=32&domain=okx.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">OKX
+                        </button>
+                        <button class="ex-sel-btn" data-group="buy" data-val="htx" onclick="selectEx('buy','htx',this)">
+                            <img src="https://www.google.com/s2/favicons?sz=32&domain=htx.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">HTX
+                        </button>
+                        <button class="ex-sel-btn" data-group="buy" data-val="gate" onclick="selectEx('buy','gate',this)">
+                            <img src="https://www.google.com/s2/favicons?sz=32&domain=gate.io" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">Gate
+                        </button>
+                    </div>
                 </div>
-                <div style="display:flex; align-items:center; padding-top:25px; color:#ccc; font-size:18px;">▶</div>
+                <div style="display:flex; align-items:center; padding-top:22px; color:#ccc; font-size:18px;">▶</div>
                 <div style="flex:1;">
-                    <label class="input-label">매도 To (국내)</label>
-                    <select id="sellEx" class="modal-input" style="padding:10px;" onchange="onExchangeChange()">
-                        <option value="upbit">Upbit</option>
-                        <option value="bithumb">Bithumb</option>
-                    </select>
+                    <label class="input-label">매도 To</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button class="ex-sel-btn active" data-group="sell" data-val="upbit" onclick="selectEx('sell','upbit',this)">
+                            <img src="https://www.google.com/s2/favicons?sz=32&domain=upbit.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">Upbit
+                        </button>
+                        <button class="ex-sel-btn" data-group="sell" data-val="bithumb" onclick="selectEx('sell','bithumb',this)">
+                            <img src="https://www.google.com/s2/favicons?sz=32&domain=bithumb.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">Bithumb
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -482,7 +499,12 @@
         document.getElementById('expectedProfitBox').style.display = 'none';
     }
 
-    function onExchangeChange() { fetchKimp(); }
+    function selectEx(group, val, btn) {
+        document.getElementById(group + 'Ex').value = val;
+        document.querySelectorAll('.ex-sel-btn[data-group="' + group + '"]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        fetchKimp();
+    }
 
     function fetchKimp() {
         const foreign  = document.getElementById('buyEx').value;
@@ -520,14 +542,20 @@
         const raw = Number(uncomma(document.getElementById('tradeAmount').value));
         const box = document.getElementById('expectedProfitBox');
         if (!raw || raw <= 0 || _kimp === null) { box.style.display = 'none'; return; }
-        // USDT 입력이면 KRW로 환산
         const amountKrw = _tradeUnit === 'USDT' ? raw * _exchRate : raw;
-        const profit = Math.round(amountKrw * _kimp / 100);
-        const sign = profit >= 0 ? '+' : '';
-        document.getElementById('expectedProfitText').textContent =
-            sign + profit.toLocaleString() + ' KP';
-        document.getElementById('kimpRateText').textContent =
-            '김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '% 기준  |  환산금액 ' + Math.round(amountKrw).toLocaleString() + ' KRW';
+        const profitKrw = amountKrw * _kimp / 100;
+        const sign = profitKrw >= 0 ? '+' : '';
+        let profitDisplay, rateDetail;
+        if (_tradeUnit === 'USDT') {
+            const profitUsdt = profitKrw / _exchRate;
+            profitDisplay = sign + profitUsdt.toFixed(2) + ' USDT';
+            rateDetail = '김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '% 기준  |  환산 ' + Math.round(amountKrw).toLocaleString() + ' KRW';
+        } else {
+            profitDisplay = sign + Math.round(profitKrw).toLocaleString() + ' 원';
+            rateDetail = '김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '% 기준';
+        }
+        document.getElementById('expectedProfitText').textContent = profitDisplay;
+        document.getElementById('kimpRateText').textContent = rateDetail;
         box.style.display = 'block';
     }
 
@@ -545,9 +573,12 @@
 
         let profitLine = '';
         if (_kimp !== null) {
-            const profit = Math.round(amountKrw * _kimp / 100);
-            const sign = profit >= 0 ? '+' : '';
-            profitLine = '\n📈 예상 수익금: ' + sign + profit.toLocaleString() + ' KP  (김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '%)';
+            const profitKrw = amountKrw * _kimp / 100;
+            const sign = profitKrw >= 0 ? '+' : '';
+            const profitDisplay = _tradeUnit === 'USDT'
+                ? sign + (profitKrw / _exchRate).toFixed(2) + ' USDT'
+                : sign + Math.round(profitKrw).toLocaleString() + ' 원';
+            profitLine = '\n📈 예상 수익금: ' + profitDisplay + '  (김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '%)';
         }
 
         const unitDisplay = _tradeUnit === 'USDT'

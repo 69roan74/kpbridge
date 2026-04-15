@@ -99,11 +99,13 @@ public class AdminController {
     public String updateMember(@RequestParam Long id,
                                @RequestParam String userName,
                                @RequestParam BigDecimal balance,
-                               @RequestParam String role) {
+                               @RequestParam String role,
+                               @RequestParam(defaultValue = "사원") String rank) {
         Member member = memberRepository.findById(id).orElseThrow();
         member.setUserName(userName);
         member.setMyCoinBalance(balance);
         member.setRole(role);
+        member.setRank(rank);
         memberRepository.save(member);
         return "redirect:/admin";
     }

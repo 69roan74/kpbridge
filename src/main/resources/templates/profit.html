@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수익금 내역 - KPBridge</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; min-height: 100vh; }
+
+        .navbar { background: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+        .navbar .logo { font-size: 20px; font-weight: bold; color: #007bff; text-decoration: none; }
+        .nav-right { display: flex; align-items: center; gap: 14px; font-size: 14px; }
+        .nav-right a { color: #555; text-decoration: none; }
+
+        .container { max-width: 800px; margin: 24px auto; padding: 0 16px 60px; }
+
+        /* 요약 카드 */
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+        .summary-card { background: #fff; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .summary-card.total { background: linear-gradient(135deg, #1971c2, #0ca678); color: #fff; }
+        .summary-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+        .summary-card.total .summary-label { color: rgba(255,255,255,0.8); }
+        .summary-value { font-size: 22px; font-weight: 800; color: #1971c2; }
+        .summary-card.total .summary-value { color: #fff; font-size: 26px; }
+        .summary-value.trade { color: #d9480f; }
+        .summary-value.referral { color: #2f9e44; }
+
+        /* 탭 */
+        .tabs { display: flex; gap: 0; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; }
+        .tab-btn { flex: 1; padding: 14px; border: none; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #888; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { color: #1971c2; border-bottom-color: #1971c2; background: #f0f7ff; }
+
+        /* 테이블 */
+        .table-box { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        table { width: 100%; border-collapse: collapse; }
+        th { font-size: 12px; color: #888; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #eee; text-align: left; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f5f5f5; font-size: 14px; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        .amount-pos { color: #d9480f; font-weight: 700; }
+        .amount-ref { color: #2f9e44; font-weight: 700; }
+        .empty-msg { text-align: center; color: #bbb; padding: 40px 0; font-size: 14px; }
+
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-trade { background: #fff3bf; color: #e67700; }
+        .badge-join { background: #d3f9d8; color: #2f9e44; }
+        .badge-ref { background: #e7f5ff; color: #1971c2; }
+
+        @media (max-width: 600px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            .summary-card.total { order: -1; }
+            th, td { font-size: 12px; padding: 8px 6px; }
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <a href="/mypage" class="logo">← KPBridge</a>
+    <div class="nav-right">
+        <span th:text="${member.userName} + '님'"></span>
+        <a href="/logout">로그아웃</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2 style="margin-bottom:20px;color:#333;">📊 수익금 내역</h2>
+
+    <!-- 요약 카드 -->
+    <div class="summary-grid">
+        <div class="summary-card total">
+            <div class="summary-label">총 누적 수익</div>
+            <div class="summary-value">
+                +<span th:text="${#numbers.formatDecimal(grandTotal, 1, 2, 'COMMA')}">0</span>
+                <span style="font-size:16px;">KP</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">거래 수익</div>
+            <div class="summary-value trade">
+                +<span th:text="${#numbers.formatDecimal(totalTradeProfit, 1, 2, 'COMMA')}">0</span>
+                <span style="font-size:13px;color:#999;">KP</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">추천 수익</div>
+            <div class="summary-value referral">
+                +<span th:text="${#numbers.formatDecimal(totalReferralEarned, 1, 2, 'COMMA')}">0</span>
+                <span style="font-size:13px;color:#999;">KP</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('trade', this)">📈 거래 수익</button>
+        <button class="tab-btn" onclick="showTab('referral', this)">🤝 추천 수익</button>
+    </div>
+
+    <!-- 거래 수익 탭 -->
+    <div id="tab-trade" class="table-box">
+        <table th:if="${!#lists.isEmpty(tradeProfits)}">
+            <thead>
+                <tr>
+                    <th>완료일시</th>
+                    <th>코인 / 경로</th>
+                    <th>수익금</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="tx : ${tradeProfits}">
+                    <td th:text="${#temporals.format(tx.date, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td>
+                        <span th:text="${tx.coinType ?: '-'}"></span>
+                        <span th:if="${tx.route != null}" style="color:#bbb;font-size:12px;" th:text="' · ' + ${tx.route}"></span>
+                    </td>
+                    <td class="amount-pos" th:text="'+' + ${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KP'"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="empty-msg" th:if="${#lists.isEmpty(tradeProfits)}">
+            아직 완료된 거래가 없습니다.
+        </div>
+    </div>
+
+    <!-- 추천 수익 탭 -->
+    <div id="tab-referral" class="table-box" style="display:none;">
+        <table th:if="${!#lists.isEmpty(referralRewards)}">
+            <thead>
+                <tr>
+                    <th>일시</th>
+                    <th>구분</th>
+                    <th>발생 회원</th>
+                    <th>레벨</th>
+                    <th>수익금</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="rw : ${referralRewards}">
+                    <td th:text="${#temporals.format(rw.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td>
+                        <span th:if="${rw.rewardType == 'JOIN'}" class="badge badge-join">가입</span>
+                        <span th:if="${rw.rewardType == 'TRADE'}" class="badge badge-trade">거래</span>
+                        <span th:if="${rw.rewardType != 'JOIN' and rw.rewardType != 'TRADE'}" class="badge badge-ref" th:text="${rw.rewardType}"></span>
+                    </td>
+                    <td th:text="${rw.source != null ? rw.source.userId : '-'}"></td>
+                    <td style="color:#888;" th:text="'L' + ${rw.level}"></td>
+                    <td class="amount-ref" th:text="'+' + ${#numbers.formatDecimal(rw.amount, 1, 2, 'COMMA')} + ' KP'"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="empty-msg" th:if="${#lists.isEmpty(referralRewards)}">
+            아직 추천 수익이 없습니다.
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tab, btn) {
+        document.getElementById('tab-trade').style.display = tab === 'trade' ? '' : 'none';
+        document.getElementById('tab-referral').style.display = tab === 'referral' ? '' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>

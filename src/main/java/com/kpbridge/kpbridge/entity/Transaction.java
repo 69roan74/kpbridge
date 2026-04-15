@@ -35,6 +35,9 @@ public class Transaction {
     // 거래 경로 (예: Binance→Upbit)
     private String route;
 
+    // 충전 방식: "USDT" 또는 "KRW" (충전 신청 시)
+    private String chargeMethod;
+
     // 출금처 정보 (출금 신청 시 사용자가 입력한 지갑 주소 또는 은행 계좌)
     @Column(length = 500)
     private String memo;

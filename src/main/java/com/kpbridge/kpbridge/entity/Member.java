@@ -40,6 +40,9 @@ public class Member {
     // ★ [수정됨] 기본값을 "ROLE_USER" -> "USER"로 변경! (깔끔하게)
     private String role = "USER";
 
+    // 네트워크 직급: 사원 → 주임 → 대리 → 과장 → 차장 → 부장
+    private String rank = "사원";
+
     @Column(precision = 18, scale = 8)
     private BigDecimal myCoinBalance = BigDecimal.ZERO;
 

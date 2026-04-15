@@ -13,7 +13,6 @@
         .lang-toggle a { font-size: 12px; padding: 4px 10px; border: 1px solid #ddd; border-radius: 20px; text-decoration: none; color: #555; margin-left: 5px; }
         .logo { font-size: 28px; font-weight: bold; color: #007bff; text-align: center; margin-bottom: 4px; }
         .subtitle { text-align: center; color: #666; margin-bottom: 8px; font-size: 14px; }
-        .bonus-banner { background: linear-gradient(135deg, #e8f5e9, #f0fff4); border: 1px solid #a5d6a7; border-radius: 10px; padding: 10px 16px; margin-bottom: 20px; text-align: center; font-size: 13px; color: #2e7d32; font-weight: 600; }
         .error-msg { color: #f82b60; font-weight: bold; text-align: center; margin-bottom: 16px; font-size: 14px; background: #fff0f3; padding: 10px; border-radius: 8px; }
         .form-group { margin-bottom: 14px; }
         label { display: block; margin-bottom: 5px; font-size: 13px; color: #333; font-weight: 600; }
@@ -40,8 +39,6 @@
         </div>
         <div class="logo">KPBridge</div>
         <div class="subtitle" th:text="#{register.subtitle}">안전한 차익거래의 시작</div>
-        <div class="bonus-banner">🎁 가입 즉시 <strong>150 KP</strong> 무료 지급!</div>
-
         <div th:if="${errorMessage}" class="error-msg">
             <span th:text="${errorMessage}"></span>
         </div>
@@ -76,8 +73,8 @@
             </div>
             <div class="form-group">
                 <label th:text="#{register.birth}">생년월일</label>
-                <input type="date" name="birthDate" id="birthDate">
-                <div class="hint">오늘 이전 날짜로 입력해주세요</div>
+                <input type="text" name="birthDate" id="birthDate" placeholder="예: 1990-01-15">
+                <div class="hint">예: 1990-01-15 형식으로 입력해주세요</div>
             </div>
 
             <div class="section-divider">추천인 코드 <span style="color:#dc3545;">*필수</span></div>
@@ -103,8 +100,6 @@
             else if (v.length <= 7) e.target.value = v.slice(0,3) + '-' + v.slice(3);
             else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
         });
-        // 생년월일 최대값 오늘로 제한
-        document.getElementById('birthDate').max = new Date().toISOString().split('T')[0];
     </script>
 </body>
 </html>

@@ -24,10 +24,12 @@ public class TransactionService {
 
     /** 충전 신청 - 잔액 미반영, 관리자 승인 대기 */
     @Transactional
-    public void charge(String userId, BigDecimal amount) {
+    public void charge(String userId, BigDecimal amount, String chargeMethod) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
         Transaction tx = saveLog(member, "충전 (Deposit)", amount, "입금대기", null, null, null);
-        log.info("💰 충전 신청 접수: 사용자={}, 금액={}", userId, amount);
+        tx.setChargeMethod(chargeMethod != null ? chargeMethod.toUpperCase() : "USDT");
+        transactionRepository.save(tx);
+        log.info("💰 충전 신청 접수: 사용자={}, 금액={}, 방식={}", userId, amount, chargeMethod);
     }
 
     /** 출금 신청 - 잔액 미차감, 관리자 승인 대기 */
@@ -105,8 +107,8 @@ public class TransactionService {
         tx.setType("거래 주문");
         tx.setAmount(investment);
         tx.setBalanceAfter(member.getMyCoinBalance());
-        tx.setStatus("거래대기중");
-        tx.setTradeStatus("거래대기중");
+        tx.setStatus("거래진행중");
+        tx.setTradeStatus("거래진행중");
         tx.setCoinType(coinType);
         tx.setRoute(route);
         tx.setDate(LocalDateTime.now());
@@ -158,7 +160,7 @@ public class TransactionService {
     }
 
     public List<Transaction> getPendingOrders() {
-        return transactionRepository.findByTradeStatusOrderByDateDesc("거래대기중");
+        return transactionRepository.findByTradeStatusOrderByDateDesc("거래진행중");
     }
 
     public List<Transaction> getActiveOrders() {

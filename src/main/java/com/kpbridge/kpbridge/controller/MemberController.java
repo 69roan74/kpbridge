@@ -115,6 +115,37 @@ public class MemberController {
     @GetMapping("/login")
     public String loginForm() { return "login"; }
 
+    @GetMapping("/profit")
+    public String profitPage(Principal principal, Model model) {
+        if (principal == null) return "redirect:/login";
+        Member member = memberRepository.findByUserId(principal.getName()).orElseThrow();
+        model.addAttribute("member", member);
+
+        // 거래 수익 목록 (거래완료 상태의 거래 주문)
+        var tradeProfits = transactionService.getHistory(principal.getName()).stream()
+                .filter(tx -> "거래완료".equals(tx.getTradeStatus()))
+                .toList();
+        model.addAttribute("tradeProfits", tradeProfits);
+
+        // 거래 수익 합계
+        BigDecimal totalTradeProfit = tradeProfits.stream()
+                .map(tx -> tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        model.addAttribute("totalTradeProfit", totalTradeProfit);
+
+        // 추천 수익 목록 및 합계
+        model.addAttribute("referralRewards",
+                referralRewardRepository.findByRecipientIdOrderByCreatedAtDesc(member.getId()));
+        BigDecimal totalReferralEarned = referralRewardRepository.sumAmountByRecipientId(member.getId());
+        model.addAttribute("totalReferralEarned", totalReferralEarned != null ? totalReferralEarned : BigDecimal.ZERO);
+
+        // 총 수익
+        BigDecimal grandTotal = totalTradeProfit.add(totalReferralEarned != null ? totalReferralEarned : BigDecimal.ZERO);
+        model.addAttribute("grandTotal", grandTotal);
+
+        return "profit";
+    }
+
     @GetMapping("/mypage")
     public String myPage(Principal principal, Model model) {
         if (principal == null) return "redirect:/login";
@@ -189,15 +220,27 @@ public class MemberController {
     public String aboutPage() { return "about"; }
 
     /**
-     * 내 추천 네트워크 계보도 (마이페이지 팝업용 JSON API)
-     * GET /api/referral/tree
+     * 추천 네트워크 계보도 JSON API
+     * GET /api/referral/tree          → 본인 계보도
+     * GET /api/referral/tree?userId=X → 특정 회원 계보도 (ADMIN 전용)
      */
     @GetMapping("/api/referral/tree")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getReferralTree(Principal principal) {
+    public ResponseEntity<Map<String, Object>> getReferralTree(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String userId,
+            Principal principal) {
         if (principal == null) return ResponseEntity.status(401).build();
-        Member member = memberRepository.findByUserId(principal.getName()).orElseThrow();
-        Map<String, Object> tree = referralService.getReferralTree(member, 10);
+
+        Member requester = memberRepository.findByUserId(principal.getName()).orElseThrow();
+
+        Member target;
+        if (userId != null && !userId.isBlank() && "ADMIN".equals(requester.getRole())) {
+            target = memberRepository.findByUserId(userId).orElse(requester);
+        } else {
+            target = requester;
+        }
+
+        Map<String, Object> tree = referralService.getReferralTree(target, 10);
         return ResponseEntity.ok(tree);
     }
 }

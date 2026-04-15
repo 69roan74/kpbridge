@@ -197,11 +197,12 @@
             <h1>회원 관리</h1>
             <div class="table-box">
                 <table>
-                    <thead><tr><th>ID</th><th>이름</th><th>권한</th><th>자산</th><th>추천 코드</th><th>추천인</th><th>관리</th></tr></thead>
+                    <thead><tr><th>ID</th><th>이름</th><th>직급</th><th>권한</th><th>자산</th><th>추천 코드</th><th>추천인</th><th>관리</th></tr></thead>
                     <tbody>
                         <tr th:each="m : ${members}">
                             <td th:text="${m.userId}"></td>
                             <td th:text="${m.userName}"></td>
+                            <td><span style="background:#e9ecef;color:#495057;padding:2px 7px;border-radius:4px;font-size:12px;font-weight:600;" th:text="${m.rank ?: '사원'}"></span></td>
                             <td>
                                 <span th:if="${m.role == 'ADMIN'}" class="badge-admin">ADMIN</span>
                                 <span th:if="${m.role != 'ADMIN'}" class="badge-user">USER</span>
@@ -210,12 +211,13 @@
                             <td><code th:text="${m.referralCode ?: '-'}"></code></td>
                             <td th:text="${m.referredBy != null ? m.referredBy.userId : '-'}"></td>
                             <td>
-                                <button class="btn-sm btn-edit" th:onclick="openMemberModal([[${m.id}]], [[${m.userName}]], [[${m.myCoinBalance}]], [[${m.role}]])">수정</button>
+                                <button class="btn-sm btn-edit" th:onclick="openMemberModal([[${m.id}]], [[${m.userName}]], [[${m.myCoinBalance}]], [[${m.role}]], [[${m.rank ?: '사원'}]])">수정</button>
                                 <form action="/admin/member/delete" method="post" style="display:inline;" onsubmit="return confirm('삭제하시겠습니까?');">
                                     <button class="btn-sm btn-del">강퇴</button>
                                     <input type="hidden" name="id" th:value="${m.id}">
                                 </form>
                                 <button class="btn-sm" style="background:#6f42c1;color:white;" th:onclick="openIndividualRateModal([[${m.id}]], [[${m.userName}]])">요율</button>
+                                <button class="btn-sm" style="background:#0ca678;color:white;" th:onclick="'openAdminTree(\'' + ${m.userId} + '\', \'' + ${m.userName} + '\')'">계보도</button>
                             </td>
                         </tr>
                     </tbody>
@@ -233,11 +235,15 @@
                     <span th:text="'(' + ${#lists.size(pendingDeposits)} + '건)'"></span>
                 </h3>
                 <table>
-                    <thead><tr><th>신청일시</th><th>회원</th><th>금액</th><th>처리</th></tr></thead>
+                    <thead><tr><th>신청일시</th><th>회원</th><th>충전 방식</th><th>금액</th><th>처리</th></tr></thead>
                     <tbody>
                         <tr th:each="tx : ${pendingDeposits}">
                             <td th:text="${#temporals.format(tx.date, 'MM-dd HH:mm')}"></td>
                             <td th:text="${tx.member.userName} + ' (' + ${tx.member.userId} + ')'"></td>
+                            <td>
+                                <span th:if="${tx.chargeMethod == 'KRW'}" style="background:#e7f5ff;color:#1971c2;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;">🏦 계좌</span>
+                                <span th:unless="${tx.chargeMethod == 'KRW'}" style="background:#fff3bf;color:#e67700;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;">💎 USDT</span>
+                            </td>
                             <td style="font-weight:700; color:#1971c2;" th:text="'+' + ${#numbers.formatDecimal(tx.amount, 1, 0, 'COMMA')} + ' KP'"></td>
                             <td style="display:flex; gap:8px;">
                                 <button class="btn-sm" style="background:#1971c2;color:white;"
@@ -247,7 +253,7 @@
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(pendingDeposits)}">
-                            <td colspan="4" style="text-align:center; padding:30px; color:#aaa;">대기 중인 충전 신청이 없습니다.</td>
+                            <td colspan="5" style="text-align:center; padding:30px; color:#aaa;">대기 중인 충전 신청이 없습니다.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -288,7 +294,7 @@
             <p style="color:#888;font-size:14px;margin-bottom:20px;">사용자가 제출한 거래 주문의 상태를 관리하세요. 상태를 변경하면 사용자의 마이페이지에 즉시 반영됩니다.</p>
 
             <div class="table-box">
-                <h3 style="margin-top:0;color:#856404;">🕐 거래대기중 <span th:text="'(' + ${#lists.size(pendingOrders)} + '건)'"></span></h3>
+                <h3 style="margin-top:0;color:#856404;">🕐 거래진행중 <span th:text="'(' + ${#lists.size(pendingOrders)} + '건)'"></span></h3>
                 <table>
                     <thead><tr><th>시간</th><th>회원</th><th>코인</th><th>경로</th><th>금액(KRW)</th><th>상태 변경</th></tr></thead>
                     <tbody>
@@ -465,6 +471,15 @@
                 <input type="text" name="userName" id="edit-name">
                 <label>자산 (강제조정)</label>
                 <input type="number" name="balance" id="edit-balance" step="0.01">
+                <label>직급</label>
+                <select name="rank" id="edit-rank">
+                    <option value="사원">사원</option>
+                    <option value="주임">주임</option>
+                    <option value="대리">대리</option>
+                    <option value="과장">과장</option>
+                    <option value="차장">차장</option>
+                    <option value="부장">부장</option>
+                </select>
                 <label>권한 (Role)</label>
                 <select name="role" id="edit-role">
                     <option value="USER">USER (일반 사용자)</option>
@@ -521,11 +536,12 @@
             if (el) el.classList.add('active');
         }
 
-        function openMemberModal(id, name, balance, role) {
+        function openMemberModal(id, name, balance, role, rank) {
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-balance').value = balance;
             document.getElementById('edit-role').value = role;
+            document.getElementById('edit-rank').value = rank || '사원';
             document.getElementById('memberModal').style.display = 'flex';
         }
 
@@ -600,6 +616,74 @@
                            else res.text().then(t => alert('오류: ' + t)); })
             .catch(() => alert('오류 발생'));
         }
+
+        // ===== 관리자 계보도 =====
+        function openAdminTree(userId, userName) {
+            document.getElementById('adminTreeTitle').textContent = '🌐 ' + userName + '(' + userId + ') 계보도';
+            document.getElementById('adminTreeModal').style.display = 'flex';
+            loadAdminTree(userId);
+        }
+        function closeAdminTree() {
+            document.getElementById('adminTreeModal').style.display = 'none';
+        }
+        function loadAdminTree(userId) {
+            document.getElementById('adminTreeContent').innerHTML =
+                '<p style="text-align:center;color:#999;padding:30px;">불러오는 중...</p>';
+            fetch('/api/referral/tree?userId=' + encodeURIComponent(userId))
+            .then(r => r.json())
+            .then(data => {
+                const wrap = document.createElement('div');
+                wrap.style.overflowX = 'auto';
+                const ul = document.createElement('ul');
+                ul.className = 'org-tree';
+                ul.appendChild(buildAdminOrgLi(data, true));
+                wrap.appendChild(ul);
+                document.getElementById('adminTreeContent').innerHTML = '';
+                document.getElementById('adminTreeContent').appendChild(wrap);
+            })
+            .catch(() => {
+                document.getElementById('adminTreeContent').innerHTML =
+                    '<p style="text-align:center;color:#999;padding:30px;">데이터를 불러오지 못했습니다.</p>';
+            });
+        }
+        function buildAdminOrgLi(node, isRoot) {
+            const li = document.createElement('li');
+            const box = document.createElement('div');
+            box.style.cssText = 'display:inline-block;background:' + (isRoot ? '#2f9e44' : '#1971c2') +
+                ';color:#fff;border-radius:8px;padding:8px 14px;font-size:13px;margin:4px;min-width:100px;text-align:center;';
+            box.innerHTML = '<div style="font-weight:800;">' + escAdm(node.userId) + '</div>' +
+                '<div style="font-size:12px;">' + escAdm(node.userName || '') + '</div>' +
+                '<div style="font-size:11px;opacity:0.8;">' + (parseFloat(node.balance)||0).toLocaleString() + ' KP</div>';
+            li.appendChild(box);
+            const children = node.children || [];
+            if (children.length > 0) {
+                const ul = document.createElement('ul');
+                ul.style.cssText = 'list-style:none;padding:0;margin:0;display:flex;gap:8px;justify-content:center;';
+                children.forEach(c => ul.appendChild(buildAdminOrgLi(c, false)));
+                li.appendChild(ul);
+            }
+            return li;
+        }
+        function escAdm(s) {
+            return String(s).replace(/[&<>"']/g, c =>
+                ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        document.getElementById('adminTreeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAdminTree();
+        });
     </script>
+
+    <!-- 계보도 모달 -->
+    <div id="adminTreeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;width:90%;max-width:900px;max-height:85vh;display:flex;flex-direction:column;">
+            <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+                <h3 id="adminTreeTitle" style="margin:0;font-size:16px;">계보도</h3>
+                <button onclick="closeAdminTree()" style="border:none;background:#f1f3f5;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:14px;">닫기</button>
+            </div>
+            <div id="adminTreeContent" style="padding:20px;overflow:auto;flex:1;">
+                <ul class="org-tree" style="list-style:none;padding:0;margin:0;text-align:center;"></ul>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -51,8 +51,8 @@ public class MemberService {
         // 4. 비밀번호 암호화
         member.setPassword(passwordEncoder.encode(member.getPassword()));
 
-        // 5. 기본 잔액 150 KP 지급
-        member.setMyCoinBalance(BigDecimal.valueOf(150));
+        // 5. 기본 잔액 0 KP (포인트 자동 지급 없음)
+        member.setMyCoinBalance(BigDecimal.ZERO);
 
         // 6. 나만의 추천 코드 자동 생성 (8자리 UUID 앞부분)
         String myCode = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();

@@ -21,8 +21,10 @@ public class TransactionController {
 
     // 1. 충전 요청
     @PostMapping("/charge")
-    public ResponseEntity<?> charge(@RequestBody Map<String, BigDecimal> req, Principal principal) {
-        transactionService.charge(principal.getName(), req.get("amount"));
+    public ResponseEntity<?> charge(@RequestBody Map<String, Object> req, Principal principal) {
+        BigDecimal amount = new BigDecimal(String.valueOf(req.get("amount")));
+        String chargeMethod = String.valueOf(req.getOrDefault("chargeMethod", "USDT"));
+        transactionService.charge(principal.getName(), amount, chargeMethod);
         return ResponseEntity.ok("충전이 완료되었습니다.");
     }
 

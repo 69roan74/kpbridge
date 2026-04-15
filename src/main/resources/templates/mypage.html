@@ -276,6 +276,9 @@
     <div class="container">
         <!-- 자산 카드 -->
         <div class="asset-card">
+            <div style="margin-bottom:8px;">
+                <span th:text="${member.rank ?: '사원'}" style="display:inline-block;background:rgba(255,255,255,0.25);color:#fff;padding:3px 12px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:1px;"></span>
+            </div>
             <div class="asset-title" th:text="#{mypage.balance}">보유 KP</div>
             <h1 class="asset-amount">
                 <span th:text="${#numbers.formatDecimal(member.myCoinBalance, 1, 0, 'COMMA')}">0</span>
@@ -285,6 +288,7 @@
                 <button class="action-btn" onclick="openModal('deposit')" th:text="'💰 ' + '충전하기'">충전하기</button>
                 <button class="action-btn" onclick="openModal('withdraw')" th:text="'💸 ' + '출금하기'">출금하기</button>
                 <a th:href="@{/member/edit}" class="action-btn" style="text-decoration:none;" th:text="'✏️ ' + #{mypage.edit}">정보 수정</a>
+                <a th:href="@{/profit}" class="action-btn" style="text-decoration:none;background:#d9480f;">📊 수익금 내역</a>
             </div>
         </div>
 
@@ -325,9 +329,14 @@
                     <span style="color: #bbb; margin: 0 6px;">|</span>
                     <span th:text="${#temporals.format(order.date, 'MM/dd HH:mm')}"></span>
                 </div>
-                <span th:class="'status-badge ' + (${order.tradeStatus == '거래대기중'} ? 'pending' : (${order.tradeStatus == '거래중'} ? 'active' : 'completed'))"
+                <span th:class="'status-badge ' + (${order.tradeStatus == '거래진행중'} ? 'pending' : (${order.tradeStatus == '거래중'} ? 'active' : 'completed'))"
                       th:text="${order.tradeStatus}"></span>
             </div>
+        </div>
+
+        <!-- 거래 진행 안내 배너 -->
+        <div th:if="${!#lists.isEmpty(orderList)}" style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#495057;">
+            ✅ 진행 중인 거래는 통상 <strong>1시간 이내</strong> 완료됩니다. 완료 후 수익금이 즉시 반영됩니다.
         </div>
 
         <!-- 차익거래 시뮬레이션 -->
@@ -521,7 +530,7 @@
             if (currentType === 'deposit') {
                 const amount = document.getElementById('amountInput').value;
                 if (!amount || Number(amount) <= 0) return alert("금액을 올바르게 입력해주세요.");
-                fetch('/api/trans/charge', { method: 'POST', headers: getCsrfHeaders(), body: JSON.stringify({ amount }) })
+                fetch('/api/trans/charge', { method: 'POST', headers: getCsrfHeaders(), body: JSON.stringify({ amount, chargeMethod: currentMethod === 'usdt' ? 'USDT' : 'KRW' }) })
                 .then(res => {
                     if (res.ok) { alert("✅ 충전 신청이 접수되었습니다!\n관리자 확인 후 반영됩니다."); closeModal(); window.location.reload(); }
                     else res.text().then(msg => alert("오류: " + msg));
@@ -544,7 +553,17 @@
 
         // ===== 거래 실행 (로딩 UX 포함) =====
         function executeTrade() {
-            if (!confirm("현재 김치프리미엄 차익거래를 시작하시겠습니까?\n(예상 수익률: +3.5% ~ +5.0%)")) return;
+            const randomProfit = Math.floor(Math.random() * 100000) + 50000;
+            const minProfit = Math.floor(randomProfit * 0.035).toLocaleString();
+            const maxProfit = Math.floor(randomProfit * 0.050).toLocaleString();
+
+            if (!confirm(
+                "⚡ 김프 차익거래를 신청하시겠습니까?\n\n" +
+                "거래 금액: " + randomProfit.toLocaleString() + " KRW\n" +
+                "예상 수익금: +" + minProfit + " ~ +" + maxProfit + " KP (3.5% ~ 5.0%)\n\n" +
+                "✅ 에이전트가 1시간 이내에 거래를 완료합니다.\n" +
+                "수익금은 거래 완료 후 즉시 반영됩니다."
+            )) return;
 
             const btn = document.getElementById('tradeBtn');
             const spinner = document.getElementById('tradeSpinner');
@@ -554,8 +573,6 @@
             btn.disabled = true;
             spinner.style.display = 'block';
             btnText.textContent = '처리 중...';
-
-            const randomProfit = Math.floor(Math.random() * 100000) + 50000;
 
             fetch('/api/trans/trade', {
                 method: 'POST',

@@ -217,7 +217,7 @@
                                     <input type="hidden" name="id" th:value="${m.id}">
                                 </form>
                                 <button class="btn-sm" style="background:#6f42c1;color:white;" th:onclick="openIndividualRateModal([[${m.id}]], [[${m.userName}]])">요율</button>
-                                <button class="btn-sm" style="background:#0ca678;color:white;" th:onclick="'openAdminTree(\'' + ${m.userId} + '\', \'' + ${m.userName} + '\')'">계보도</button>
+                                <button class="btn-sm" style="background:#0ca678;color:white;" th:onclick="openAdminTree([[${m.userId}]], [[${m.userName}]])">계보도</button>
                             </td>
                         </tr>
                     </tbody>
@@ -306,9 +306,9 @@
                             <td th:text="${#numbers.formatDecimal(order.amount, 1, 0, 'COMMA')}"></td>
                             <td>
                                 <button class="btn-sm" style="background:#0a58ca;color:white;"
-                                        th:onclick="'updateOrderStatus(' + ${order.id} + ', \'거래중\')'">거래 시작</button>
+                                        th:onclick="updateOrderStatus([[${order.id}]], '거래중')">거래 시작</button>
                                 <button class="btn-sm" style="background:#20c997;color:white;"
-                                        th:onclick="'updateOrderStatus(' + ${order.id} + ', \'거래완료\')'">완료 처리</button>
+                                        th:onclick="updateOrderStatus([[${order.id}]], '거래완료')">완료 처리</button>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(pendingOrders)}">
@@ -331,7 +331,7 @@
                             <td th:text="${#numbers.formatDecimal(order.amount, 1, 0, 'COMMA')}"></td>
                             <td>
                                 <button class="btn-sm" style="background:#20c997;color:white;"
-                                        th:onclick="'updateOrderStatus(' + ${order.id} + ', \'거래완료\')'">완료 처리</button>
+                                        th:onclick="updateOrderStatus([[${order.id}]], '거래완료')">완료 처리</button>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(activeOrders)}">

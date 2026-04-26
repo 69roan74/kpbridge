@@ -35,33 +35,6 @@ public class MemberController {
     private final PasswordEncoder passwordEncoder;
     private final SiteConfigService siteConfigService;
 
-    // 🚨 [비상구] 관리자 계정 생성/복구
-    @GetMapping("/emergency-fix")
-    @ResponseBody
-    public String emergencyFix() {
-        String targetId = "admin";
-        String targetPw = "1q2w3e4r%T";
-
-        Member member = memberRepository.findByUserId(targetId).orElse(new Member());
-
-        if (member.getId() == null) {
-            member.setUserId(targetId);
-            member.setUserName("총관리자");
-            member.setEmail("admin@kpbridge.com");
-            member.setPhone("010-0000-0000");
-            member.setBirthDate("19990101");
-            member.setMyCoinBalance(BigDecimal.ZERO);
-            member.setReferralAppliedYn("N");
-        }
-
-        member.setPassword(passwordEncoder.encode(targetPw));
-        member.setRole("ADMIN");
-        memberRepository.save(member);
-        log.warn("🚨 비상구 코드 실행됨! 관리자 계정({})이 복구되었습니다.", targetId);
-
-        return "<h1>✅ 복구 완료!</h1><a href='/login'>로그인 이동</a>";
-    }
-
     @GetMapping("/")
     public String mainPage(Model model, Principal principal) {
         if (principal != null) {

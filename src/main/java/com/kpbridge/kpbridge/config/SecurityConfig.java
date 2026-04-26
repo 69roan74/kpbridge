@@ -47,7 +47,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN") // 관리자만 접근 가능
-                .requestMatchers("/", "/register", "/login", "/about", "/faq", "/css/**", "/js/**", "/emergency-fix", "/favicon.svg", "/favicon.ico").permitAll()
+                .requestMatchers("/", "/register", "/login", "/about", "/faq", "/css/**", "/js/**", "/favicon.svg", "/favicon.ico").permitAll()
                 .requestMatchers("/api/prices", "/api/coin/**").permitAll() // 시세 API는 공개
                 .anyRequest().authenticated()
             )

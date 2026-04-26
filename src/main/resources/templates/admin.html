@@ -562,7 +562,7 @@
             const labels = { '거래중': '거래 시작', '거래완료': '거래 완료 처리' };
             if (!confirm(`[${txId}번 주문] ${labels[status] || status} 처리하시겠습니까?`)) return;
 
-            fetch('/api/admin/order/status', {
+            fetch('/admin/order/status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ txId, status })

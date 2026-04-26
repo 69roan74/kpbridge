@@ -48,6 +48,27 @@
 
         <hr class="divider">
 
+        <h3 style="font-size:16px;color:#333;margin:0 0 12px;">🔒 비밀번호 변경</h3>
+        <div th:if="${pwSuccess}" style="background:#d3f9d8;color:#2f9e44;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600;" th:text="${pwSuccess}"></div>
+        <div th:if="${pwError}" style="background:#ffe3e3;color:#c92a2a;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600;" th:text="${pwError}"></div>
+        <form th:action="@{/member/change-password}" method="post" autocomplete="off">
+            <div class="input-group">
+                <label>현재 비밀번호</label>
+                <input type="password" name="currentPassword" autocomplete="current-password" required>
+            </div>
+            <div class="input-group">
+                <label>새 비밀번호 (8자 이상)</label>
+                <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div class="input-group">
+                <label>새 비밀번호 확인</label>
+                <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required>
+            </div>
+            <button type="submit" class="btn-save" style="background:#495057;">비밀번호 변경</button>
+        </form>
+
+        <hr class="divider">
+
         <form th:action="@{/member/delete}" method="post" onsubmit="return confirm('정말 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.');">
             <button type="submit" class="btn-delete">회원 탈퇴</button>
         </form>

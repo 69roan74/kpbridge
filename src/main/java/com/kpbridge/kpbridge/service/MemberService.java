@@ -2,7 +2,9 @@ package com.kpbridge.kpbridge.service;
 
 import com.kpbridge.kpbridge.entity.Member;
 import com.kpbridge.kpbridge.repository.MemberRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -20,6 +23,29 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final ReferralService referralService;
+
+    /** 부팅 시 referralCode가 비어있는 회원에게 자동 발급 (구버전 데이터 보정) */
+    @PostConstruct
+    public void backfillMissingReferralCodes() {
+        List<Member> missing = memberRepository.findAll().stream()
+                .filter(m -> m.getReferralCode() == null || m.getReferralCode().isBlank())
+                .toList();
+        for (Member m : missing) {
+            m.setReferralCode(UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase());
+            memberRepository.save(m);
+            log.info("🔧 referralCode 자동 발급: {} → {}", m.getUserId(), m.getReferralCode());
+        }
+    }
+
+    /** 비밀번호 변경 - 현재 비밀번호 검증 후 새 비밀번호로 교체 */
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        Member member = memberRepository.findByUserId(userId).orElseThrow();
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new RuntimeException("현재 비밀번호가 일치하지 않습니다.");
+        }
+        member.setPassword(passwordEncoder.encode(newPassword));
+        memberRepository.save(member);
+    }
 
     /**
      * @param member      가입할 회원 객체 (referralCode 필드에 추천인 코드가 담겨 올 수 있음)

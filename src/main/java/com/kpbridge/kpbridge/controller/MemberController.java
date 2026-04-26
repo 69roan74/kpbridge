@@ -181,6 +181,29 @@ public class MemberController {
         return "redirect:/mypage";
     }
 
+    @PostMapping("/member/change-password")
+    public String changePassword(@RequestParam("currentPassword") String currentPassword,
+                                  @RequestParam("newPassword") String newPassword,
+                                  @RequestParam("confirmPassword") String confirmPassword,
+                                  Principal principal,
+                                  org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        if (!newPassword.equals(confirmPassword)) {
+            ra.addFlashAttribute("pwError", "새 비밀번호와 확인이 일치하지 않습니다.");
+            return "redirect:/member/edit";
+        }
+        if (newPassword.length() < 8) {
+            ra.addFlashAttribute("pwError", "새 비밀번호는 8자 이상이어야 합니다.");
+            return "redirect:/member/edit";
+        }
+        try {
+            memberService.changePassword(principal.getName(), currentPassword, newPassword);
+            ra.addFlashAttribute("pwSuccess", "비밀번호가 변경되었습니다.");
+        } catch (RuntimeException e) {
+            ra.addFlashAttribute("pwError", e.getMessage());
+        }
+        return "redirect:/member/edit";
+    }
+
     @PostMapping("/member/delete")
     public String deleteMember(Principal principal) {
         Member member = memberRepository.findByUserId(principal.getName()).get();

@@ -45,20 +45,28 @@ public class TransactionService {
         log.info("💸 출금 신청 접수: 사용자={}, 금액={}, 출금처={}", userId, amount, memo);
     }
 
-    /** 관리자: 충전 승인 → 잔액 증가 */
+    /** 관리자: 충전 승인 → 잔액 증가 + 원금 추적 */
     @Transactional
     public void approveDeposit(Long txId) {
         Transaction tx = transactionRepository.findById(txId).orElseThrow();
         Member member = tx.getMember();
         member.setMyCoinBalance(member.getMyCoinBalance().add(tx.getAmount()));
+        // 원금 추적: KRW 충전은 krwPrincipal, USDT 충전은 usdtPrincipal (USDT 단위)
+        if ("USDT".equalsIgnoreCase(tx.getChargeMethod())) {
+            if (member.getUsdtPrincipal() == null) member.setUsdtPrincipal(BigDecimal.ZERO);
+            member.setUsdtPrincipal(member.getUsdtPrincipal().add(tx.getAmount()));
+        } else {
+            if (member.getKrwPrincipal() == null) member.setKrwPrincipal(BigDecimal.ZERO);
+            member.setKrwPrincipal(member.getKrwPrincipal().add(tx.getAmount()));
+        }
         memberRepository.save(member);
         tx.setStatus("완료");
         tx.setBalanceAfter(member.getMyCoinBalance());
         transactionRepository.save(tx);
-        log.info("✅ 충전 승인: txId={}, 사용자={}, 금액={}", txId, member.getUserId(), tx.getAmount());
+        log.info("✅ 충전 승인: txId={}, 사용자={}, 금액={}, 방식={}", txId, member.getUserId(), tx.getAmount(), tx.getChargeMethod());
     }
 
-    /** 관리자: 출금 승인 → 잔액 차감 */
+    /** 관리자: 출금 승인 → 잔액 차감 + KRW 원금 차감 */
     @Transactional
     public void approveWithdraw(Long txId) {
         Transaction tx = transactionRepository.findById(txId).orElseThrow();
@@ -67,6 +75,10 @@ public class TransactionService {
             throw new RuntimeException("잔액 부족으로 출금 승인 불가");
         }
         member.setMyCoinBalance(member.getMyCoinBalance().subtract(tx.getAmount()));
+        // 출금은 KRW 원금에서 차감 (0 이하로는 내려가지 않음)
+        if (member.getKrwPrincipal() == null) member.setKrwPrincipal(BigDecimal.ZERO);
+        BigDecimal newKrw = member.getKrwPrincipal().subtract(tx.getAmount());
+        member.setKrwPrincipal(newKrw.max(BigDecimal.ZERO));
         memberRepository.save(member);
         tx.setStatus("완료");
         tx.setAmount(tx.getAmount().negate());

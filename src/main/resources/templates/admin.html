@@ -165,11 +165,11 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">총 위탁 자산</div>
-                    <h3 class="stat-value" style="color: #20c997;" th:text="${#numbers.formatDecimal(totalAssets, 1, 0, 'COMMA')} + ' KP'">0 KP</h3>
+                    <h3 class="stat-value" style="color: #20c997;" th:text="${#numbers.formatDecimal(totalAssets, 1, 0, 'COMMA')} + ' KRW'">0 KRW</h3>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">총 추천 지급액</div>
-                    <h3 class="stat-value" style="color: #f08c00;" th:text="${#numbers.formatDecimal(totalReferralRewards, 1, 2, 'COMMA')} + ' KP'">0 KP</h3>
+                    <h3 class="stat-value" style="color: #f08c00;" th:text="${#numbers.formatDecimal(totalReferralRewards, 1, 2, 'COMMA')} + ' KRW'">0 KRW</h3>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">활성 추천인 수</div>
@@ -185,7 +185,7 @@
                             <td th:text="${#temporals.format(tx.date, 'MM-dd HH:mm')}"></td>
                             <td th:text="${tx.member.userName}"></td>
                             <td th:text="${tx.type}"></td>
-                            <td th:text="${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KP'"></td>
+                            <td th:text="${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KRW'"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -244,7 +244,7 @@
                                 <span th:if="${tx.chargeMethod == 'KRW'}" style="background:#e7f5ff;color:#1971c2;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;">🏦 계좌</span>
                                 <span th:unless="${tx.chargeMethod == 'KRW'}" style="background:#fff3bf;color:#e67700;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;">💎 USDT</span>
                             </td>
-                            <td style="font-weight:700; color:#1971c2;" th:text="'+' + ${#numbers.formatDecimal(tx.amount, 1, 0, 'COMMA')} + ' KP'"></td>
+                            <td style="font-weight:700; color:#1971c2;" th:text="'+' + ${#numbers.formatDecimal(tx.amount, 1, 0, 'COMMA')} + ' KRW'"></td>
                             <td style="display:flex; gap:8px;">
                                 <button class="btn-sm" style="background:#1971c2;color:white;"
                                         th:onclick="'approveDeposit(' + ${tx.id} + ', this)'">✅ 승인</button>
@@ -270,7 +270,7 @@
                         <tr th:each="tx : ${pendingWithdraws}">
                             <td th:text="${#temporals.format(tx.date, 'MM-dd HH:mm')}"></td>
                             <td th:text="${tx.member.userName} + ' (' + ${tx.member.userId} + ')'"></td>
-                            <td style="font-weight:700; color:#c92a2a;" th:text="'-' + ${#numbers.formatDecimal(tx.amount, 1, 0, 'COMMA')} + ' KP'"></td>
+                            <td style="font-weight:700; color:#c92a2a;" th:text="'-' + ${#numbers.formatDecimal(tx.amount, 1, 0, 'COMMA')} + ' KRW'"></td>
                             <td style="font-size:12px; color:#555; word-break:break-all; max-width:180px;"
                                 th:text="${tx.memo != null} ? ${tx.memo} : '-'"></td>
                             <td style="display:flex; gap:8px;">
@@ -355,8 +355,8 @@
                             <td th:text="${tx.type}"></td>
                             <td style="font-size:12px; color:#555; max-width:200px; word-break:break-all;"
                                 th:text="${tx.memo != null and !#strings.isEmpty(tx.memo)} ? ${tx.memo} : '-'"></td>
-                            <td th:text="${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KP'"></td>
-                            <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 2, 'COMMA')} + ' KP'"></td>
+                            <td th:text="${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KRW'"></td>
+                            <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 2, 'COMMA')} + ' KRW'"></td>
                             <td>
                                 <form action="/admin/transaction/delete" method="post" onsubmit="return confirm('기록을 삭제합니까?');">
                                     <input type="hidden" name="id" th:value="${tx.id}">
@@ -403,7 +403,7 @@
                     <tbody>
                         <tr>
                             <td>가입 보너스</td>
-                            <td><strong th:text="${globalJoinBonus} + ' KP'">50 KP</strong></td>
+                            <td><strong th:text="${globalJoinBonus} + ' KRW'">50 KRW</strong></td>
                         </tr>
                         <tr>
                             <td>분배율 JSON</td>
@@ -653,7 +653,7 @@
                 ';color:#fff;border-radius:8px;padding:8px 14px;font-size:13px;margin:4px;min-width:100px;text-align:center;';
             box.innerHTML = '<div style="font-weight:800;">' + escAdm(node.userId) + '</div>' +
                 '<div style="font-size:12px;">' + escAdm(node.userName || '') + '</div>' +
-                '<div style="font-size:11px;opacity:0.8;">' + (parseFloat(node.balance)||0).toLocaleString() + ' KP</div>';
+                '<div style="font-size:11px;opacity:0.8;">' + (parseFloat(node.balance)||0).toLocaleString() + ' KRW</div>';
             li.appendChild(box);
             const children = node.children || [];
             if (children.length > 0) {

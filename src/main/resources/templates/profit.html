@@ -71,21 +71,21 @@
             <div class="summary-label">총 누적 수익</div>
             <div class="summary-value">
                 +<span th:text="${#numbers.formatDecimal(grandTotal, 1, 2, 'COMMA')}">0</span>
-                <span style="font-size:16px;">KP</span>
+                <span style="font-size:16px;">KRW</span>
             </div>
         </div>
         <div class="summary-card">
             <div class="summary-label">거래 수익</div>
             <div class="summary-value trade">
                 +<span th:text="${#numbers.formatDecimal(totalTradeProfit, 1, 2, 'COMMA')}">0</span>
-                <span style="font-size:13px;color:#999;">KP</span>
+                <span style="font-size:13px;color:#999;">KRW</span>
             </div>
         </div>
         <div class="summary-card">
             <div class="summary-label">추천 수익</div>
             <div class="summary-value referral">
                 +<span th:text="${#numbers.formatDecimal(totalReferralEarned, 1, 2, 'COMMA')}">0</span>
-                <span style="font-size:13px;color:#999;">KP</span>
+                <span style="font-size:13px;color:#999;">KRW</span>
             </div>
         </div>
     </div>
@@ -113,7 +113,7 @@
                         <span th:text="${tx.coinType ?: '-'}"></span>
                         <span th:if="${tx.route != null}" style="color:#bbb;font-size:12px;" th:text="' · ' + ${tx.route}"></span>
                     </td>
-                    <td class="amount-pos" th:text="'+' + ${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KP'"></td>
+                    <td class="amount-pos" th:text="'+' + ${#numbers.formatDecimal(tx.amount, 1, 2, 'COMMA')} + ' KRW'"></td>
                 </tr>
             </tbody>
         </table>
@@ -144,7 +144,7 @@
                     </td>
                     <td th:text="${rw.source != null ? rw.source.userId : '-'}"></td>
                     <td style="color:#888;" th:text="'L' + ${rw.level}"></td>
-                    <td class="amount-ref" th:text="'+' + ${#numbers.formatDecimal(rw.amount, 1, 2, 'COMMA')} + ' KP'"></td>
+                    <td class="amount-ref" th:text="'+' + ${#numbers.formatDecimal(rw.amount, 1, 2, 'COMMA')} + ' KRW'"></td>
                 </tr>
             </tbody>
         </table>

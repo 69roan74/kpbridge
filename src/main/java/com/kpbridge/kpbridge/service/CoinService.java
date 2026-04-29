@@ -155,6 +155,17 @@ public class CoinService {
         return new PriceResponseDto(coins, exchangeRate);
     }
 
+    /** USDT/KRW 환율 (Upbit KRW-USDT 시세) */
+    @Cacheable(value = "singlePrice", key = "'usdt_krw_rate'")
+    public double getUsdtKrwRate() {
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> res = restTemplate.getForObject(
+                    "https://api.upbit.com/v1/ticker?markets=KRW-USDT", List.class);
+            return (res != null && !res.isEmpty()) ? toDouble(res.get(0).get("trade_price")) : 1400.0;
+        } catch (Exception e) { return 1400.0; }
+    }
+
     // --- 기존 메서드 (MemberController.mainPage에서 호출됨) - 캐싱 적용 ---
 
     @Cacheable(value = "singlePrice", key = "'upbit_btc'")

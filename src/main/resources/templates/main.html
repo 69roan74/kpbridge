@@ -11,7 +11,7 @@
     <style>
         /* [공통 레이아웃] */
         body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; padding-bottom: 80px; }
-        .navbar { background-color: #ffffff; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .navbar { background-color: #ffffff; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-wrap: nowrap; }
         .logo { font-size: 24px; font-weight: bold; color: #007bff; text-decoration: none; }
         .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
 
@@ -161,6 +161,10 @@
         .footer-right a { color: #0062ff; text-decoration: none; font-weight: bold; margin-left: 15px; }
 
         @media (max-width: 768px) {
+            .navbar { padding: 10px 4%; flex-wrap: wrap; align-items: center; }
+            .logo { font-size: 18px; flex: 1; }
+            .user-info { width: 100%; justify-content: flex-end; flex-wrap: nowrap !important; font-size: 11px !important; gap: 5px !important; padding: 6px 0 2px; border-top: 1px solid #f0f0f0; margin-top: 6px; }
+            .user-info a[style*="border-radius:20px"] { font-size: 10px !important; padding: 2px 6px !important; }
             .footer-content { flex-direction: column; text-align: left; }
             .footer-right { text-align: left; margin-top: 10px; }
             .footer-right a { margin-left: 0; margin-right: 15px; }
@@ -176,23 +180,25 @@
             .ex-dropdown-btn { padding: 5px 10px; font-size: 12px; gap: 4px; white-space: nowrap; }
             .ex-dropdown-btn img { width: 14px; height: 14px; }
             .ex-label { max-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .coin-table th, .coin-table td { padding: 10px 8px; font-size: 13px; white-space: nowrap; }
+            .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .coin-table { width: max-content; min-width: 100%; }
+            .coin-table th, .coin-table td { padding: 10px 6px; font-size: 11px; white-space: nowrap; }
             .coin-table th:first-child, .coin-table td:first-child {
                 position: sticky; left: 0; background: white; z-index: 1;
                 box-shadow: 2px 0 4px rgba(0,0,0,0.04);
             }
             .coin-table th:first-child { background: #f8f9fa; }
-            .coin-icon { width: 22px; height: 22px; }
-            .coin-name-cell { gap: 6px; }
-            .coin-name-text .name { font-size: 13px; }
-            .coin-name-text .ticker { font-size: 10px; }
+            .coin-icon { width: 20px; height: 20px; }
+            .coin-name-cell { gap: 5px; }
+            .coin-name-text .name { font-size: 12px; }
+            .coin-name-text .ticker { font-size: 9px; }
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <a th:href="@{/}" class="logo">KPBridge</a>
-        <div class="user-info" style="font-size: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div class="user-info" style="font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-left: auto; white-space: nowrap;">
             <!-- 언어 토글 -->
             <a th:href="@{/(lang=ko)}" style="font-size:12px; padding:3px 10px; border:1px solid #ddd; border-radius:20px; text-decoration:none; color:#555;">KO</a>
             <a th:href="@{/(lang=en)}" style="font-size:12px; padding:3px 10px; border:1px solid #ddd; border-radius:20px; text-decoration:none; color:#555;">EN</a>
@@ -305,9 +311,9 @@
                     <tr>
                         <th th:text="#{main.table.name}">이름</th>
                         <th class="num" th:text="#{main.table.price}">현재가</th>
-                        <th class="num" th:text="#{main.table.kimchi}">김프</th>
                         <th class="num" th:text="#{main.table.buy}">매수가격</th>
                         <th class="num" th:text="#{main.table.sell}">매도가격</th>
+                        <th class="num" th:text="#{main.table.kimchi}">김프</th>
                     </tr>
                 </thead>
                 <tbody id="coin-table-body">
@@ -361,16 +367,13 @@
             <input type="hidden" id="selectedCoin" value="BTC">
 
             <!-- 매수/매도 거래소 선택 -->
-            <input type="hidden" id="buyEx" value="binance">
+            <input type="hidden" id="buyEx" value="okx">
             <input type="hidden" id="sellEx" value="upbit">
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <div style="flex:1;">
                     <label class="input-label">매수 From</label>
                     <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                        <button class="ex-sel-btn active" data-group="buy" data-val="binance" onclick="selectEx('buy','binance',this)">
-                            <img src="https://www.google.com/s2/favicons?sz=32&domain=binance.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">Binance
-                        </button>
-                        <button class="ex-sel-btn" data-group="buy" data-val="okx" onclick="selectEx('buy','okx',this)">
+                        <button class="ex-sel-btn active" data-group="buy" data-val="okx" onclick="selectEx('buy','okx',this)">
                             <img src="https://www.google.com/s2/favicons?sz=32&domain=okx.com" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;">OKX
                         </button>
                         <button class="ex-sel-btn" data-group="buy" data-val="htx" onclick="selectEx('buy','htx',this)">
@@ -413,9 +416,9 @@
             <input type="tel" id="tradeAmount" class="modal-input" placeholder="0" onkeyup="inputNumberFormat(this); updateExpectedProfit();">
 
             <!-- 예상 수익금 -->
-            <div id="expectedProfitBox" style="display:none; background:#f0fff4; border:1px solid #b2f2bb; border-radius:8px; padding:12px 14px; margin-top:10px;">
-                <div style="font-size:12px; color:#2f9e44; font-weight:700; margin-bottom:4px;">📈 예상 수익금 (현재 김프 기준)</div>
-                <div id="expectedProfitText" style="font-size:18px; font-weight:800; color:#2f9e44;"></div>
+            <div id="expectedProfitBox" style="display:none; border-radius:8px; padding:12px 14px; margin-top:10px;">
+                <div id="expectedProfitLabel" style="font-size:12px; font-weight:700; margin-bottom:4px;"></div>
+                <div id="expectedProfitText" style="font-size:18px; font-weight:800;"></div>
                 <div id="kimpRateText" style="font-size:12px; color:#868e96; margin-top:3px;"></div>
                 <div style="font-size:11px; color:#aaa; margin-top:2px;">* 실제 수익은 시장 상황에 따라 달라질 수 있습니다.</div>
             </div>
@@ -523,7 +526,7 @@
                     const color = _kimp > 0 ? '#f03e3e' : (_kimp < 0 ? '#1971c2' : '#555');
                     document.getElementById('kimpText').innerHTML =
                         '현재 ' + foreign.toUpperCase() + ' → ' + domestic.toUpperCase() +
-                        ' 김프 : <strong style="color:' + color + ';font-size:15px;">' + sign + _kimp.toFixed(2) + '%</strong>';
+                        ' 김프 : <strong style="color:' + color + ';font-size:15px;">' + sign + _kimp.toFixed(4) + '%</strong>';
                 } else {
                     document.getElementById('kimpText').textContent = '해당 코인의 김프를 가져올 수 없습니다.';
                 }
@@ -554,6 +557,13 @@
             profitDisplay = sign + Math.round(profitKrw).toLocaleString() + ' 원';
             rateDetail = '김프 ' + (_kimp >= 0 ? '+' : '') + _kimp.toFixed(2) + '% 기준';
         }
+        const isPositive = profitKrw >= 0;
+        const color = isPositive ? '#2f9e44' : '#e03131';
+        box.style.background = isPositive ? '#f0fff4' : '#fff5f5';
+        box.style.border = '1px solid ' + (isPositive ? '#b2f2bb' : '#ffc9c9');
+        document.getElementById('expectedProfitLabel').style.color = color;
+        document.getElementById('expectedProfitLabel').textContent = (isPositive ? '📈' : '📉') + ' 예상 수익금 (현재 김프 기준)';
+        document.getElementById('expectedProfitText').style.color = color;
         document.getElementById('expectedProfitText').textContent = profitDisplay;
         document.getElementById('kimpRateText').textContent = rateDetail;
         box.style.display = 'block';
@@ -657,9 +667,9 @@
                         '</div>' +
                     '</div></td>' +
                     '<td class="num" style="font-weight:700;">' + price + '</td>' +
-                    '<td class="num ' + premiumClass + '" style="font-weight:700;">' + premiumText + '</td>' +
                     '<td class="num" style="font-weight:600; color:#555;">' + buyUsdt + '</td>' +
                     '<td class="num ' + premiumClass + '" style="font-weight:600;">' + sellUsdt + '</td>' +
+                    '<td class="num ' + premiumClass + '" style="font-weight:700;">' + premiumText + '</td>' +
                 '</tr>';
             });
             tbody.innerHTML = html;

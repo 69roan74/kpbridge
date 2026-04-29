@@ -145,6 +145,16 @@ public class MemberController {
         model.addAttribute("companyWallet", siteConfigService.get("company.wallet", "TKpBridge9xCzFm2nHqRsUvWy3D7K"));
         model.addAttribute("companyBank", siteConfigService.get("company.bank", "기업은행 123-45-6789012"));
 
+        // 원금 자산 패널용
+        double usdtRate = coinService.getUsdtKrwRate();
+        BigDecimal krwP = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
+        BigDecimal usdtP = member.getUsdtPrincipal() != null ? member.getUsdtPrincipal() : BigDecimal.ZERO;
+        BigDecimal totalPrincipal = krwP.add(usdtP.multiply(BigDecimal.valueOf(usdtRate)));
+        model.addAttribute("krwPrincipal", krwP);
+        model.addAttribute("usdtPrincipal", usdtP);
+        model.addAttribute("totalPrincipal", totalPrincipal);
+        model.addAttribute("usdtRate", usdtRate);
+
         return "mypage";
     }
 

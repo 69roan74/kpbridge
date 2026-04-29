@@ -46,5 +46,13 @@ public class Member {
     @Column(precision = 18, scale = 8)
     private BigDecimal myCoinBalance = BigDecimal.ZERO;
 
+    // 원금 추적 (수익 제외): KRW 입금 원금
+    @Column(precision = 18, scale = 8)
+    private BigDecimal krwPrincipal = BigDecimal.ZERO;
+
+    // 원금 추적 (수익 제외): USDT 입금 원금 (USDT 단위)
+    @Column(precision = 18, scale = 8)
+    private BigDecimal usdtPrincipal = BigDecimal.ZERO;
+
     private LocalDateTime joinDate = LocalDateTime.now();
 }

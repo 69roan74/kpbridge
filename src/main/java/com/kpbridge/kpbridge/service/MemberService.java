@@ -96,10 +96,7 @@ public class MemberService {
         // 8. 저장
         Member saved = memberRepository.save(member);
 
-        // 9. 가입 보너스 체인 전파 (추천인이 있을 때만)
-        if (saved.getReferredBy() != null) {
-            referralService.propagateJoinReward(saved);
-        }
+        // 가입 보너스 없음 - 거래 수익 발생 시에만 추천인 보상 지급
     }
 
     // 기존 호환성을 위해 inviteCode 없는 버전도 유지

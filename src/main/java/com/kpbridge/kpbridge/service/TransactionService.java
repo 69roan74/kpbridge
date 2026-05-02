@@ -51,12 +51,15 @@ public class TransactionService {
     public void approveDeposit(Long txId) {
         Transaction tx = transactionRepository.findById(txId).orElseThrow();
         Member member = tx.getMember();
-        member.setMyCoinBalance(member.getMyCoinBalance().add(tx.getAmount()));
-        // 원금 추적: KRW 충전은 krwPrincipal, USDT 충전은 usdtPrincipal (USDT 단위)
+        // 원금 추적: USDT 충전은 KRW 환산해서 잔고에 반영 + usdtPrincipal(USDT 단위) 기록
         if ("USDT".equalsIgnoreCase(tx.getChargeMethod())) {
+            double rate = coinService.getUsdtKrwRate();
+            BigDecimal krwEquivalent = tx.getAmount().multiply(BigDecimal.valueOf(rate));
+            member.setMyCoinBalance(member.getMyCoinBalance().add(krwEquivalent));
             if (member.getUsdtPrincipal() == null) member.setUsdtPrincipal(BigDecimal.ZERO);
             member.setUsdtPrincipal(member.getUsdtPrincipal().add(tx.getAmount()));
         } else {
+            member.setMyCoinBalance(member.getMyCoinBalance().add(tx.getAmount()));
             if (member.getKrwPrincipal() == null) member.setKrwPrincipal(BigDecimal.ZERO);
             member.setKrwPrincipal(member.getKrwPrincipal().add(tx.getAmount()));
         }

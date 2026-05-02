@@ -419,7 +419,7 @@
             </div>
 
             <label class="input-label">
-                <span id="amountLabel">투자 금액 (KRW)</span>
+                <span id="amountLabel">거래 금액 (KRW)</span>
             </label>
             <input type="tel" id="tradeAmount" class="modal-input" placeholder="0" onkeyup="inputNumberFormat(this); updateExpectedProfit();">
 
@@ -505,7 +505,7 @@
         _tradeUnit = unit;
         document.getElementById('unitKrw').style.cssText  = 'flex:1;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;border:2px solid ' + (unit==='KRW' ? '#007bff;background:#007bff;color:#fff' : '#dee2e6;background:#fff;color:#888');
         document.getElementById('unitUsdt').style.cssText = 'flex:1;padding:8px;border-radius:8px;cursor:pointer;font-weight:700;border:2px solid ' + (unit==='USDT' ? '#007bff;background:#007bff;color:#fff' : '#dee2e6;background:#fff;color:#888');
-        document.getElementById('amountLabel').textContent = unit === 'KRW' ? '투자 금액 (KRW)' : '투자 금액 (USDT / Tether)';
+        document.getElementById('amountLabel').textContent = unit === 'KRW' ? '거래 금액 (KRW)' : '투자 금액 (USDT / Tether)';
         document.getElementById('tradeAmount').value = '';
         document.getElementById('expectedProfitBox').style.display = 'none';
     }

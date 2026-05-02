@@ -2,6 +2,7 @@ package com.kpbridge.kpbridge.controller;
 
 import com.kpbridge.kpbridge.entity.Transaction;
 import com.kpbridge.kpbridge.service.ChatService;
+import com.kpbridge.kpbridge.service.CoinService;
 import com.kpbridge.kpbridge.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final ChatService chatService;
+    private final CoinService coinService;
 
     // 1. 충전 요청
     @PostMapping("/charge")
@@ -41,12 +43,16 @@ public class TransactionController {
         }
     }
 
-    // 거래 가능 금액 조회
+    // 거래 가능 금액 조회 (KRW + USDT 분리)
     @GetMapping("/tradable-balance")
     public ResponseEntity<?> tradableBalance(Principal principal) {
         if (principal == null) return ResponseEntity.status(401).build();
-        BigDecimal balance = transactionService.getTradableBalance(principal.getName());
-        return ResponseEntity.ok(Map.of("tradableBalance", balance));
+        BigDecimal krw = transactionService.getTradableBalance(principal.getName());
+        double rate = coinService.getUsdtKrwRate();
+        BigDecimal usdt = rate > 0
+                ? krw.divide(BigDecimal.valueOf(rate), 2, java.math.RoundingMode.DOWN)
+                : BigDecimal.ZERO;
+        return ResponseEntity.ok(Map.of("tradableKrw", krw, "tradableUsdt", usdt));
     }
 
     // 3. 거래 주문 접수 (main.html 거래하기 버튼)

@@ -41,6 +41,14 @@ public class TransactionController {
         }
     }
 
+    // 거래 가능 금액 조회
+    @GetMapping("/tradable-balance")
+    public ResponseEntity<?> tradableBalance(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        BigDecimal balance = transactionService.getTradableBalance(principal.getName());
+        return ResponseEntity.ok(Map.of("tradableBalance", balance));
+    }
+
     // 3. 거래 주문 접수 (main.html 거래하기 버튼)
     @PostMapping("/trade")
     public ResponseEntity<?> submitTrade(@RequestBody Map<String, Object> req, Principal principal) {

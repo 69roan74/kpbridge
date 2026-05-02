@@ -304,11 +304,11 @@
                 <div class="asset-panel asset-panel-main">
                     <div class="asset-panel-label">총 보유 자산 (원금)</div>
                     <div class="asset-panel-amount">
-                        <span th:text="${#numbers.formatDecimal(totalPrincipal, 1, 0, 'COMMA')}">0</span>
+                        <span th:text="${#numbers.formatDecimal(totalPrincipal, 1, 'COMMA', 0, 'POINT')}">0</span>
                         <span class="asset-panel-unit">KRW</span>
                     </div>
                     <div style="font-size:11px; opacity:0.7; margin-top:6px;">
-                        USDT 환율 ≈ <span th:text="${#numbers.formatDecimal(usdtRate, 1, 0, 'COMMA')}">0</span> KRW
+                        USDT 환율 ≈ <span th:text="${#numbers.formatDecimal(usdtRate, 1, 'COMMA', 0, 'POINT')}">0</span> KRW
                     </div>
                 </div>
                 <!-- 오른쪽: 원화 / 테더 분할 -->
@@ -316,14 +316,14 @@
                     <div class="asset-panel asset-panel-sub">
                         <div class="asset-panel-label">원화 자산</div>
                         <div class="asset-panel-amount" style="font-size:22px;">
-                            <span th:text="${#numbers.formatDecimal(krwPrincipal, 1, 0, 'COMMA')}">0</span>
+                            <span th:text="${#numbers.formatDecimal(krwPrincipal, 1, 'COMMA', 0, 'POINT')}">0</span>
                             <span class="asset-panel-unit" style="font-size:13px;">KRW</span>
                         </div>
                     </div>
                     <div class="asset-panel asset-panel-sub">
                         <div class="asset-panel-label">테더 자산</div>
                         <div class="asset-panel-amount" style="font-size:22px;">
-                            <span th:text="${#numbers.formatDecimal(usdtPrincipal, 1, 2, 'COMMA')}">0</span>
+                            <span th:text="${#numbers.formatDecimal(usdtPrincipal, 1, 'COMMA', 2, 'POINT')}">0</span>
                             <span class="asset-panel-unit" style="font-size:13px;">USDT</span>
                         </div>
                     </div>
@@ -356,7 +356,7 @@
                 <div class="referral-stat">
                     <div class="referral-stat-label" th:text="#{mypage.referral.earned}">추천 수익</div>
                     <div class="referral-stat-value" style="color: #007bff;">
-                        +<span th:text="${#numbers.formatDecimal(totalReferralEarned, 1, 2, 'COMMA')}">0</span> KRW
+                        +<span th:text="${#numbers.formatDecimal(totalReferralEarned, 1, 'COMMA', 0, 'POINT')}">0</span> KRW
                     </div>
                 </div>
             </div>
@@ -370,7 +370,7 @@
             <div th:each="order : ${orderList}" class="order-item">
                 <div class="order-detail">
                     <strong th:text="${order.coinType} + ' - ' + ${order.route}"></strong><br>
-                    <span th:text="${#numbers.formatDecimal(order.amount, 1, 0, 'COMMA')} + ' KRW'"></span>
+                    <span th:text="${#numbers.formatDecimal(order.amount, 1, 'COMMA', 0, 'POINT')} + ' KRW'"></span>
                     <span style="color: #bbb; margin: 0 6px;">|</span>
                     <span th:text="${#temporals.format(order.date, 'MM/dd HH:mm')}"></span>
                 </div>
@@ -407,11 +407,11 @@
                             <span th:if="${tx.type.contains('수익') or tx.type.contains('차익')}" style="color: #d6336c; font-weight: bold;">수익</span>
                             <span th:if="${!tx.type.contains('충전') and !tx.type.contains('Deposit') and !tx.type.contains('출금') and !tx.type.contains('Withdraw') and !tx.type.contains('수익') and !tx.type.contains('차익')}" th:text="${tx.type}"></span>
                         </td>
-                        <td th:text="${(tx.amount.signum() >= 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 1, 2, 'COMMA') + ' KRW'}"
+                        <td th:text="${(tx.amount.signum() >= 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 1, 'COMMA', 0, 'POINT') + ' KRW'}"
                             th:style="${tx.amount.signum() < 0 ? 'color: #333;' : 'color: #d6336c; font-weight: bold;'}">
                         </td>
                         <td><span class="status-badge completed" th:text="${tx.status}">완료</span></td>
-                        <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 2, 'COMMA') + ' KRW'}" style="color: #888;"></td>
+                        <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 'COMMA', 0, 'POINT') + ' KRW'}" style="color: #888;"></td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(historyList)}">
                         <td colspan="5" style="text-align: center; padding: 40px; color: #999;">

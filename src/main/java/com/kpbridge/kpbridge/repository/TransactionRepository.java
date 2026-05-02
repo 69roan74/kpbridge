@@ -18,4 +18,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // 입금/출금 대기 중인 신청 조회 (관리자용)
     List<Transaction> findByTypeContainingAndStatusOrderByDateDesc(String type, String status);
+
+    // 첫 거래 여부 확인 (완료된 거래 주문 존재 여부)
+    boolean existsByMemberIdAndTradeStatus(Long memberId, String tradeStatus);
 }

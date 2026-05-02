@@ -228,7 +228,7 @@
                 <th:block th:if="${user != null}">
                     <h3 style="margin:0; font-size: 12px; font-weight: 400; opacity: 0.8; letter-spacing: 2px;">REAL-TIME ASSETS</h3>
                     <h1 style="margin:10px 0; font-weight: 900; letter-spacing: -1px;">
-                        <span th:text="${#numbers.formatDecimal(user.myCoinBalance, 1, 0, 'COMMA')}">0</span>
+                        <span th:text="${#numbers.formatDecimal(user.myCoinBalance, 1, 'COMMA', 0, 'POINT')}">0</span>
                         <span style="font-size: 20px; font-weight: 300;">KRW</span>
                     </h1>
                 </th:block>
@@ -248,7 +248,7 @@
                             [[${#temporals.format(tx.date, 'MM-dd HH:mm')}]] 
                             <span th:text="${tx.type}"></span> 
                             (<span th:text="${tx.status}"></span>) 
-                            - <span th:text="${#numbers.formatDecimal(tx.amount, 1, 0, 'COMMA')} + ' KRW'"></span>
+                            - <span th:text="${#numbers.formatDecimal(tx.amount, 1, 'COMMA', 0, 'POINT')} + ' KRW'"></span>
                         </div>
                     </th:block>
                     <th:block th:if="${user == null or #lists.isEmpty(historyList)}">
@@ -408,6 +408,15 @@
             <div style="display:flex; gap:8px; margin-bottom:8px;">
                 <button id="unitKrw" onclick="setUnit('KRW')" style="flex:1; padding:8px; border-radius:8px; border:2px solid #007bff; background:#007bff; color:#fff; font-weight:700; cursor:pointer;">KRW (원화)</button>
                 <button id="unitUsdt" onclick="setUnit('USDT')" style="flex:1; padding:8px; border-radius:8px; border:2px solid #dee2e6; background:#fff; color:#888; font-weight:700; cursor:pointer;">USDT (테더)</button>
+            </div>
+
+            <!-- 거래 가능 금액 -->
+            <div id="tradableBalanceBox" style="background:#f0f7ff; border-radius:10px; padding:10px 14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:11px; color:#6c757d; margin-bottom:2px;">거래 가능 금액</div>
+                    <div style="font-size:16px; font-weight:800; color:#007bff;"><span id="tradableBalanceText">로딩 중...</span></div>
+                </div>
+                <button onclick="setMaxAmount()" style="background:#007bff; color:white; border:none; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:700;">전액</button>
             </div>
 
             <label class="input-label">
@@ -678,10 +687,34 @@
         });
     }
 
+    let _tradableBalance = 0;
+
     function openTradeModal() {
         document.getElementById('tradeModal').style.display = 'flex';
         setUnit('KRW');
         fetchKimp();
+        loadTradableBalance();
+    }
+
+    function loadTradableBalance() {
+        document.getElementById('tradableBalanceText').textContent = '로딩 중...';
+        fetch('/api/trans/tradable-balance')
+            .then(res => res.json())
+            .then(data => {
+                _tradableBalance = data.tradableBalance;
+                const formatted = Math.floor(_tradableBalance).toLocaleString('ko-KR');
+                document.getElementById('tradableBalanceText').textContent = formatted + ' KRW';
+            })
+            .catch(() => {
+                document.getElementById('tradableBalanceText').textContent = '조회 실패';
+            });
+    }
+
+    function setMaxAmount() {
+        const maxRaw = Math.floor(_tradableBalance);
+        const input = document.getElementById('tradeAmount');
+        input.value = maxRaw.toLocaleString('ko-KR');
+        updateExpectedProfit();
     }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 

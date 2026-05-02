@@ -21,6 +21,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final MemberRepository memberRepository;
     private final ReferralService referralService;
+    private final CoinService coinService;
 
     /** 충전 신청 - 잔액 미반영, 관리자 승인 대기 */
     @Transactional
@@ -107,17 +108,48 @@ public class TransactionService {
     }
 
     /**
-     * 거래 주문 접수 - 상태: 거래대기중
-     * 실제 수익 계산은 관리자가 거래완료 처리 시 수행
+     * 거래 가능 금액 조회
+     * - 첫 거래: myCoinBalance 전액 사용 가능
+     * - 이후: 수익금(myCoinBalance - totalPrincipal)만 사용 가능
+     */
+    public BigDecimal getTradableBalance(String userId) {
+        Member member = memberRepository.findByUserId(userId).orElseThrow();
+        boolean hasCompletedTrade = transactionRepository.existsByMemberIdAndTradeStatus(member.getId(), "거래완료");
+        if (!hasCompletedTrade) {
+            return member.getMyCoinBalance().max(BigDecimal.ZERO);
+        }
+        BigDecimal krwP = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
+        BigDecimal usdtP = member.getUsdtPrincipal() != null ? member.getUsdtPrincipal() : BigDecimal.ZERO;
+        double usdtRate = coinService.getUsdtKrwRate();
+        BigDecimal usdtInKrw = usdtP.multiply(BigDecimal.valueOf(usdtRate));
+        BigDecimal principal = krwP.add(usdtInKrw);
+        return member.getMyCoinBalance().subtract(principal).max(BigDecimal.ZERO);
+    }
+
+    /**
+     * 거래 주문 접수 - 잔고 검증 + 투자금 선차감
      */
     @Transactional
     public Transaction submitOrder(String userId, String coinType, String route, BigDecimal investment) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
 
+        BigDecimal tradable = getTradableBalance(userId);
+        if (investment.compareTo(tradable) > 0) {
+            throw new RuntimeException("거래 가능 금액을 초과했습니다. (가능: " + tradable.toPlainString() + " KRW)");
+        }
+        if (investment.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("투자 금액은 0보다 커야 합니다.");
+        }
+
+        // 투자금 선차감
+        member.setMyCoinBalance(member.getMyCoinBalance().subtract(investment));
+        memberRepository.save(member);
+
         Transaction tx = new Transaction();
         tx.setMember(member);
         tx.setType("거래 주문");
         tx.setAmount(investment);
+        tx.setInvestmentAmount(investment);
         tx.setBalanceAfter(member.getMyCoinBalance());
         tx.setStatus("거래진행중");
         tx.setTradeStatus("거래진행중");
@@ -126,22 +158,24 @@ public class TransactionService {
         tx.setDate(LocalDateTime.now());
         transactionRepository.save(tx);
 
-        log.info("📋 거래 주문 접수: 사용자={}, 코인={}, 경로={}, 금액={}", userId, coinType, route, investment);
+        log.info("📋 거래 주문 접수: 사용자={}, 코인={}, 경로={}, 금액={}, 잔고={}", userId, coinType, route, investment, member.getMyCoinBalance());
         return tx;
     }
 
     /**
-     * 관리자가 거래 완료 처리 시 호출 - 수익 계산 및 잔액 반영
+     * 관리자가 거래 완료 처리 시 호출 - 투자금 반환 + 수익 추가
      */
     @Transactional
     public void completeOrder(Long txId) {
         Transaction tx = transactionRepository.findById(txId).orElseThrow();
         Member member = tx.getMember();
 
+        BigDecimal investment = tx.getInvestmentAmount() != null ? tx.getInvestmentAmount() : tx.getAmount();
         double rate = 0.035 + (Math.random() * 0.015);
-        BigDecimal profit = tx.getAmount().multiply(BigDecimal.valueOf(rate));
+        BigDecimal profit = investment.multiply(BigDecimal.valueOf(rate));
 
-        member.setMyCoinBalance(member.getMyCoinBalance().add(profit));
+        // 투자금 반환 + 수익금 추가
+        member.setMyCoinBalance(member.getMyCoinBalance().add(investment).add(profit));
         memberRepository.save(member);
 
         tx.setTradeStatus("거래완료");
@@ -151,7 +185,26 @@ public class TransactionService {
         transactionRepository.save(tx);
 
         referralService.propagateTradeReward(member, profit, tx.getId());
-        log.info("✅ 거래 완료 처리: txId={}, 수익={}", txId, profit);
+        log.info("✅ 거래 완료 처리: txId={}, 투자금={}, 수익={}", txId, investment, profit);
+    }
+
+    /**
+     * 관리자가 거래 취소 처리 - 투자금 환불
+     */
+    @Transactional
+    public void cancelOrder(Long txId) {
+        Transaction tx = transactionRepository.findById(txId).orElseThrow();
+        Member member = tx.getMember();
+
+        BigDecimal investment = tx.getInvestmentAmount() != null ? tx.getInvestmentAmount() : tx.getAmount();
+        member.setMyCoinBalance(member.getMyCoinBalance().add(investment));
+        memberRepository.save(member);
+
+        tx.setTradeStatus("거래취소");
+        tx.setStatus("거래취소");
+        tx.setBalanceAfter(member.getMyCoinBalance());
+        transactionRepository.save(tx);
+        log.info("❌ 거래 취소: txId={}, 투자금 환불={}", txId, investment);
     }
 
     /**

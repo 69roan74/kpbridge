@@ -94,6 +94,37 @@
         .history-table th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #888; font-size: 14px; }
         .history-table td { padding: 15px; border-bottom: 1px solid #f9f9f9; font-size: 15px; }
 
+        @media (max-width: 768px) {
+            .history-box { padding: 20px 16px; }
+            .history-table thead { display: none; }
+            .history-table tbody tr {
+                display: block;
+                background: #f8f9fa;
+                border-radius: 12px;
+                margin-bottom: 12px;
+                padding: 14px 16px;
+                border: 1px solid #eee;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            }
+            .history-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 6px 0;
+                border-bottom: 1px solid #eee;
+                font-size: 14px;
+            }
+            .history-table td:last-child { border-bottom: none; }
+            .history-table td::before {
+                content: attr(data-label);
+                font-size: 12px;
+                color: #999;
+                font-weight: 600;
+                flex-shrink: 0;
+                margin-right: 10px;
+            }
+        }
+
         /* 스켈레톤 로더 */
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; height: 16px; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -400,18 +431,19 @@
                 </thead>
                 <tbody>
                     <tr th:each="tx : ${historyList}">
-                        <td th:text="${#temporals.format(tx.date, 'yyyy-MM-dd HH:mm:ss')}"></td>
-                        <td>
+                        <td data-label="일시" th:text="${#temporals.format(tx.date, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td data-label="구분">
                             <span th:if="${tx.type.contains('충전') or tx.type.contains('Deposit')}" style="color: #007bff; font-weight: bold;">충전</span>
                             <span th:if="${tx.type.contains('출금') or tx.type.contains('Withdraw')}" style="color: #888; font-weight: bold;">출금</span>
                             <span th:if="${tx.type.contains('수익') or tx.type.contains('차익')}" style="color: #d6336c; font-weight: bold;">수익</span>
                             <span th:if="${!tx.type.contains('충전') and !tx.type.contains('Deposit') and !tx.type.contains('출금') and !tx.type.contains('Withdraw') and !tx.type.contains('수익') and !tx.type.contains('차익')}" th:text="${tx.type}"></span>
                         </td>
-                        <td th:text="${(tx.amount.signum() >= 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 1, 'COMMA', 0, 'POINT') + ' KRW'}"
+                        <td data-label="금액"
+                            th:text="${(tx.amount.signum() >= 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 1, 'COMMA', 0, 'POINT') + ' KRW'}"
                             th:style="${tx.amount.signum() < 0 ? 'color: #333;' : 'color: #d6336c; font-weight: bold;'}">
                         </td>
-                        <td><span class="status-badge completed" th:text="${tx.status}">완료</span></td>
-                        <td th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 'COMMA', 0, 'POINT') + ' KRW'}" style="color: #888;"></td>
+                        <td data-label="상태"><span class="status-badge completed" th:text="${tx.status}">완료</span></td>
+                        <td data-label="잔액" th:text="${#numbers.formatDecimal(tx.balanceAfter, 1, 'COMMA', 0, 'POINT') + ' KRW'}" style="color: #888;"></td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(historyList)}">
                         <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
@@ -428,10 +460,10 @@
         <div class="modal-box">
             <h2 class="modal-title" id="modalTitle">충전 신청</h2>
 
-            <!-- 방법 탭 (USDT / 원화) -->
+            <!-- 방법 탭 (원화 / USDT) -->
             <div class="method-tabs">
-                <button id="tabUsdt" class="method-tab active" onclick="selectMethod('usdt')">💎 USDT (테더)</button>
-                <button id="tabKrw"  class="method-tab"        onclick="selectMethod('krw')">🏦 원화 (KRW)</button>
+                <button id="tabKrw"  class="method-tab active"  onclick="selectMethod('krw')">🏦 원화 (KRW)</button>
+                <button id="tabUsdt" class="method-tab"         onclick="selectMethod('usdt')">💎 USDT (테더)</button>
             </div>
 
             <!-- ===== 충전 안내 ===== -->
@@ -514,7 +546,7 @@
 
         // ===== 충전/출금 =====
         let currentType = '';
-        let currentMethod = 'usdt'; // 'usdt' | 'krw'
+        let currentMethod = 'krw'; // 'krw' | 'usdt'
 
         function openModal(type) {
             currentType = type;
@@ -522,7 +554,7 @@
             document.getElementById('depositSection').style.display  = type === 'deposit' ? '' : 'none';
             document.getElementById('withdrawSection').style.display = type === 'withdraw' ? '' : 'none';
             // 초기화
-            selectMethod('usdt');
+            selectMethod('krw');
             if (type === 'deposit') {
                 document.getElementById('amountInput').value = '';
             } else {

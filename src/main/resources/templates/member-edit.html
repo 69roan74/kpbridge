@@ -42,6 +42,14 @@
                 <label>이메일</label>
                 <input type="email" name="email" th:value="${member.email}">
             </div>
+            <div class="input-group">
+                <label>출금 계좌 (KRW)</label>
+                <input type="text" name="bankAccount" th:value="${member.bankAccount}" placeholder="예: 국민은행 123-456-7890 홍길동">
+            </div>
+            <div class="input-group">
+                <label>USDT 지갑주소 (TRC20)</label>
+                <input type="text" name="walletAddress" th:value="${member.walletAddress}" placeholder="TRC20 지갑 주소 입력">
+            </div>
             <button type="submit" class="btn-save">수정 완료</button>
         </form>
         <a th:href="@{/mypage}" class="btn-cancel">취소</a>

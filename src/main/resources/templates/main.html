@@ -101,7 +101,7 @@
         .faq-section:hover { transform: translateY(-2px); }
         .faq-icon { font-size: 20px; margin-right: 15px; }
         .faq-slider { height: 20px; overflow: hidden; flex: 1; }
-        .faq-list { list-style: none; margin: 0; padding: 0; animation: slideUp 10s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .faq-list { list-style: none; margin: 0; padding: 0; animation: slideUp 20s infinite cubic-bezier(0.4, 0, 0.2, 1); }
         .faq-list li { height: 20px; line-height: 20px; font-size: 14px; color: #555; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
         @keyframes slideUp {
@@ -327,10 +327,10 @@
                 <div class="faq-icon">💡</div>
                 <div class="faq-slider">
                     <ul class="faq-list">
-                        <!-- <li>김치프리미엄이란 무엇인가요? (클릭하여 확인)</li>
+                        <li>김치프리미엄이란 무엇인가요? (클릭하여 확인)</li>
                         <li>입금 및 충전은 어떻게 하나요?</li>
                         <li>거래 수수료는 얼마인가요?</li>
-                        <li>보안 정책 및 이용 가이드</li> -->
+                        <li>보안 정책 및 이용 가이드</li>
                     </ul>
                 </div>
                 <div style="font-size: 12px; color: #999;" th:text="#{main.faq.more}">더보기 ></div>
@@ -421,7 +421,8 @@
             <label class="input-label">
                 <span id="amountLabel">거래 금액 (KRW)</span>
             </label>
-            <input type="tel" id="tradeAmount" class="modal-input" placeholder="0" onkeyup="inputNumberFormat(this); updateExpectedProfit();">
+            <input type="tel" id="tradeAmount" class="modal-input" placeholder="0" onkeyup="inputNumberFormat(this); updateExpectedProfit(); validateTradeAmount();">
+            <div id="tradeAmountError" style="color:#e03131; font-size:12px; margin-top:4px; display:none;">⚠️ 거래 가능 금액을 초과했습니다.</div>
 
             <!-- 예상 수익금 -->
             <div id="expectedProfitBox" style="display:none; border-radius:8px; padding:12px 14px; margin-top:10px;">
@@ -592,6 +593,20 @@
     function comma(str) { return String(str).replace(/(\d)(?=(?:\d{3})+(?!\d))/g, '$1,'); }
     function uncomma(str) { return String(str).replace(/[^\d]+/g, ''); }
 
+    function validateTradeAmount() {
+        const raw = Number(uncomma(document.getElementById('tradeAmount').value));
+        const max = _tradeUnit === 'USDT' ? _tradableUsdt : _tradableKrw;
+        const input = document.getElementById('tradeAmount');
+        const err = document.getElementById('tradeAmountError');
+        if (raw > 0 && raw > max) {
+            input.style.borderColor = '#e03131';
+            err.style.display = 'block';
+        } else {
+            input.style.borderColor = '';
+            err.style.display = 'none';
+        }
+    }
+
     function updateExpectedProfit() {
         const raw = Number(uncomma(document.getElementById('tradeAmount').value));
         const box = document.getElementById('expectedProfitBox');
@@ -628,6 +643,14 @@
 
         if (!rawInput || rawInput <= 0) return alert(_i18n.errAmount);
 
+        const maxAllowed = _tradeUnit === 'USDT' ? _tradableUsdt : _tradableKrw;
+        if (rawInput > maxAllowed) {
+            const maxDisplay = _tradeUnit === 'USDT'
+                ? maxAllowed.toFixed(2) + ' USDT'
+                : Math.floor(maxAllowed).toLocaleString() + ' KRW';
+            return alert('거래 가능 금액을 초과했습니다.\n최대: ' + maxDisplay);
+        }
+
         // KRW 환산 (USDT 입력 시 환율 적용)
         const amountKrw = _tradeUnit === 'USDT' ? Math.round(rawInput * _exchRate) : rawInput;
         const route = buy.toUpperCase() + ' -> ' + sell.toUpperCase();
@@ -651,7 +674,7 @@
         fetch('/api/trans/trade', {
             method: 'POST',
             headers: getCsrfHeaders(),
-            body: JSON.stringify({ coin: coin, route: route, amount: amountKrw })
+            body: JSON.stringify({ coin: coin, route: route, amount: amountKrw, tradeType: _tradeUnit })
         }).then(res => {
             if (res.ok) {
                 alert(_i18n.successLine1 + '\n\n' + _i18n.successLine2);
@@ -732,10 +755,27 @@
     let _tradableKrw = 0, _tradableUsdt = 0;
 
     function openTradeModal() {
-        document.getElementById('tradeModal').style.display = 'flex';
-        setUnit('KRW');
-        setTradeMode('jimp');
-        loadTradableBalance();
+        fetch('/api/trans/trade-hours')
+            .then(res => res.json())
+            .then(data => {
+                if (data.enabled) {
+                    const now = new Date().getHours();
+                    if (now < data.startHour || now >= data.endHour) {
+                        alert('⏰ 거래 가능 시간이 아닙니다.\n거래 시간: ' + data.startHour + '시 ~ ' + data.endHour + '시에 이용해 주세요.');
+                        return;
+                    }
+                }
+                document.getElementById('tradeModal').style.display = 'flex';
+                setUnit('KRW');
+                setTradeMode('jimp');
+                loadTradableBalance();
+            })
+            .catch(() => {
+                document.getElementById('tradeModal').style.display = 'flex';
+                setUnit('KRW');
+                setTradeMode('jimp');
+                loadTradableBalance();
+            });
     }
 
     function loadTradableBalance() {

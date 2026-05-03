@@ -109,6 +109,7 @@
         <div class="menu-item" onclick="showSection('orders', this)">📋 거래 주문 관리</div>
         <div class="menu-item" onclick="showSection('referral', this)">🔗 추천 요율 설정</div>
         <div class="menu-item" onclick="showSection('paymentConfig', this)">💳 입금 정보 설정</div>
+        <div class="menu-item" onclick="showSection('tradeHours', this)">⏰ 거래 시간 설정</div>
         <div class="menu-item" onclick="showSection('faq', this)">💡 FAQ 관리</div>
         <a href="/admin/chat" class="menu-item" th:style="${totalUnread > 0} ? 'color:white; background:#3d0000;' : ''">
             💬 1:1 채팅
@@ -211,7 +212,7 @@
                             <td><code th:text="${m.referralCode ?: '-'}"></code></td>
                             <td th:text="${m.referredBy != null ? m.referredBy.userId : '-'}"></td>
                             <td>
-                                <button class="btn-sm btn-edit" th:onclick="openMemberModal([[${m.id}]], [[${m.userName}]], [[${m.myCoinBalance}]], [[${m.role}]], [[${m.rank ?: '사원'}]])">수정</button>
+                                <button class="btn-sm btn-edit" th:onclick="openMemberModal([[${m.id}]], [[${m.userName}]], [[${m.myCoinBalance}]], [[${m.role}]], [[${m.rank ?: '사원'}]], [[${m.bankAccount ?: ''}]], [[${m.walletAddress ?: ''}]])">수정</button>
                                 <form action="/admin/member/delete" method="post" style="display:inline;" onsubmit="return confirm('삭제하시겠습니까?');">
                                     <button class="btn-sm btn-del">강퇴</button>
                                     <input type="hidden" name="id" th:value="${m.id}">
@@ -438,6 +439,36 @@
             </div>
         </div>
 
+        <!-- 거래 시간 설정 -->
+        <div id="tradeHours" class="section">
+            <h1>⏰ 거래 시간 설정</h1>
+            <div class="table-box" style="max-width: 500px;">
+                <p style="color:#666; font-size:14px; margin-bottom: 20px;">
+                    설정한 시간대에만 사용자의 거래하기 버튼이 활성화됩니다.
+                </p>
+                <form th:action="@{/admin/config/trade-hours}" method="post">
+                    <div class="config-form">
+                        <label>거래 시간 제한 활성화</label>
+                        <select name="enabled">
+                            <option value="Y" th:selected="${tradeHoursEnabled == 'Y'}">활성화 (시간 제한 적용)</option>
+                            <option value="N" th:selected="${tradeHoursEnabled != 'Y'}">비활성화 (24시간 거래 가능)</option>
+                        </select>
+                        <label style="margin-top:14px;">거래 시작 시간 (시)</label>
+                        <select name="startHour">
+                            <option th:each="h : ${#numbers.sequence(0,23)}" th:value="${h}"
+                                    th:text="${h} + '시'" th:selected="${tradeStartHour == h.toString()}"></option>
+                        </select>
+                        <label style="margin-top:14px;">거래 종료 시간 (시)</label>
+                        <select name="endHour">
+                            <option th:each="h : ${#numbers.sequence(1,24)}" th:value="${h}"
+                                    th:text="${h} + '시'" th:selected="${tradeEndHour == h.toString()}"></option>
+                        </select>
+                    </div>
+                    <button type="submit" class="save-btn" style="margin-top:16px;">💾 저장</button>
+                </form>
+            </div>
+        </div>
+
         <!-- FAQ 관리 -->
         <div id="faq" class="section">
             <h1>FAQ 관리 <button class="btn-add" onclick="openFaqModal()" style="float:right;">+ 새 질문 등록</button></h1>
@@ -485,6 +516,10 @@
                     <option value="USER">USER (일반 사용자)</option>
                     <option value="ADMIN">ADMIN (관리자)</option>
                 </select>
+                <label>출금 계좌 (KRW)</label>
+                <input type="text" name="bankAccount" id="edit-bankAccount" placeholder="예: 국민은행 123-456-7890 홍길동">
+                <label>USDT 지갑주소 (TRC20)</label>
+                <input type="text" name="walletAddress" id="edit-walletAddress" placeholder="TRC20 지갑 주소">
                 <button type="submit" class="btn-add" style="width:100%; margin-top:12px;">저장</button>
                 <button type="button" onclick="closeModals()" style="width:100%; margin-top:5px; background:#ddd; border:none; padding:10px; border-radius:5px; cursor:pointer;">취소</button>
             </form>
@@ -536,12 +571,14 @@
             if (el) el.classList.add('active');
         }
 
-        function openMemberModal(id, name, balance, role, rank) {
+        function openMemberModal(id, name, balance, role, rank, bankAccount, walletAddress) {
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-balance').value = balance;
             document.getElementById('edit-role').value = role;
             document.getElementById('edit-rank').value = rank || '사원';
+            document.getElementById('edit-bankAccount').value = bankAccount || '';
+            document.getElementById('edit-walletAddress').value = walletAddress || '';
             document.getElementById('memberModal').style.display = 'flex';
         }
 

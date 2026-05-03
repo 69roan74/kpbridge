@@ -80,6 +80,11 @@ public class AdminController {
         model.addAttribute("companyWallet", siteConfigService.get("company.wallet", "TKpBridge9xCzFm2nHqRsUvWy3D7K"));
         model.addAttribute("companyBank", siteConfigService.get("company.bank", "기업은행 123-45-6789012"));
 
+        // 거래 시간 설정
+        model.addAttribute("tradeHoursEnabled", siteConfigService.get("trade.hours.enabled", "N"));
+        model.addAttribute("tradeStartHour", siteConfigService.get("trade.start.hour", "9"));
+        model.addAttribute("tradeEndHour", siteConfigService.get("trade.end.hour", "18"));
+
         // 입출금 승인 대기 목록
         model.addAttribute("pendingDeposits", transactionService.getPendingDeposits());
         model.addAttribute("pendingWithdraws", transactionService.getPendingWithdraws());
@@ -100,12 +105,16 @@ public class AdminController {
                                @RequestParam String userName,
                                @RequestParam BigDecimal balance,
                                @RequestParam String role,
-                               @RequestParam(defaultValue = "사원") String rank) {
+                               @RequestParam(defaultValue = "사원") String rank,
+                               @RequestParam(required = false) String bankAccount,
+                               @RequestParam(required = false) String walletAddress) {
         Member member = memberRepository.findById(id).orElseThrow();
         member.setUserName(userName);
         member.setMyCoinBalance(balance);
         member.setRole(role);
         member.setRank(rank);
+        member.setBankAccount(bankAccount);
+        member.setWalletAddress(walletAddress);
         memberRepository.save(member);
         return "redirect:/admin";
     }
@@ -250,6 +259,16 @@ public class AdminController {
     public String savePaymentConfig(@RequestParam String companyWallet, @RequestParam String companyBank) {
         siteConfigService.set("company.wallet", companyWallet);
         siteConfigService.set("company.bank", companyBank);
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/config/trade-hours")
+    public String saveTradeHours(@RequestParam String enabled,
+                                  @RequestParam String startHour,
+                                  @RequestParam String endHour) {
+        siteConfigService.set("trade.hours.enabled", enabled);
+        siteConfigService.set("trade.start.hour", startHour);
+        siteConfigService.set("trade.end.hour", endHour);
         return "redirect:/admin";
     }
 

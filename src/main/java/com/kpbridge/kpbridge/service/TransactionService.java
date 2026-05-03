@@ -33,12 +33,13 @@ public class TransactionService {
         log.info("💰 충전 신청 접수: 사용자={}, 금액={}, 방식={}", userId, amount, chargeMethod);
     }
 
-    /** 출금 신청 - 잔액 미차감, 관리자 승인 대기 */
+    /** 출금 신청 - 수익금 범위 내에서만 가능, 관리자 승인 대기 */
     @Transactional
     public void withdraw(String userId, BigDecimal amount, String memo) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
-        if (member.getMyCoinBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("잔액이 부족합니다.");
+        BigDecimal withdrawable = getWithdrawableBalance(userId);
+        if (withdrawable.compareTo(amount) < 0) {
+            throw new RuntimeException("출금 가능 금액(수익금)을 초과했습니다. 출금 가능: " + withdrawable.toPlainString() + " KRW");
         }
         Transaction tx = saveLog(member, "출금 (Withdraw)", amount, "출금대기", null, null, null);
         tx.setMemo(memo);
@@ -110,38 +111,60 @@ public class TransactionService {
         return transactionRepository.findByTypeContainingAndStatusOrderByDateDesc("출금", "출금대기");
     }
 
-    /**
-     * 거래 가능 금액 조회
-     * - 첫 거래: myCoinBalance 전액 사용 가능
-     * - 이후: 수익금(myCoinBalance - totalPrincipal)만 사용 가능
-     */
-    public BigDecimal getTradableBalance(String userId) {
+    /** KRW 거래 가능 금액 (KRW 원금) */
+    public BigDecimal getTradableKrwBalance(String userId) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
-        boolean hasCompletedTrade = transactionRepository.existsByMemberIdAndTradeStatus(member.getId(), "거래완료");
-        if (!hasCompletedTrade) {
-            return member.getMyCoinBalance().max(BigDecimal.ZERO);
-        }
+        return member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
+    }
+
+    /** USDT 거래 가능 금액 (USDT 원금, USDT 단위) */
+    public BigDecimal getTradableUsdtBalance(String userId) {
+        Member member = memberRepository.findByUserId(userId).orElseThrow();
+        return member.getUsdtPrincipal() != null ? member.getUsdtPrincipal() : BigDecimal.ZERO;
+    }
+
+    /** 출금 가능 금액 = 수익금(잔고 - 원금) */
+    public BigDecimal getWithdrawableBalance(String userId) {
+        Member member = memberRepository.findByUserId(userId).orElseThrow();
         BigDecimal krwP = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
         BigDecimal usdtP = member.getUsdtPrincipal() != null ? member.getUsdtPrincipal() : BigDecimal.ZERO;
         double usdtRate = coinService.getUsdtKrwRate();
-        BigDecimal usdtInKrw = usdtP.multiply(BigDecimal.valueOf(usdtRate));
-        BigDecimal principal = krwP.add(usdtInKrw);
+        BigDecimal principal = krwP.add(usdtP.multiply(BigDecimal.valueOf(usdtRate)));
         return member.getMyCoinBalance().subtract(principal).max(BigDecimal.ZERO);
     }
 
+    /** 하위 호환용 — 합산 원금 반환 */
+    public BigDecimal getTradableBalance(String userId) {
+        double rate = coinService.getUsdtKrwRate();
+        return getTradableKrwBalance(userId)
+                .add(getTradableUsdtBalance(userId).multiply(BigDecimal.valueOf(rate)));
+    }
+
     /**
-     * 거래 주문 접수 - 잔고 검증 + 투자금 선차감
+     * 거래 주문 접수 - KRW/USDT 원금 분리 검증 + 투자금 선차감
+     * tradeType: "KRW" → KRW 원금 한도, "USDT" → USDT 원금(KRW 환산) 한도
      */
     @Transactional
-    public Transaction submitOrder(String userId, String coinType, String route, BigDecimal investment) {
+    public Transaction submitOrder(String userId, String coinType, String route, BigDecimal investment, String tradeType) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
 
-        BigDecimal tradable = getTradableBalance(userId);
-        if (investment.compareTo(tradable) > 0) {
-            throw new RuntimeException("거래 가능 금액을 초과했습니다. (가능: " + tradable.toPlainString() + " KRW)");
-        }
         if (investment.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("투자 금액은 0보다 커야 합니다.");
+        }
+
+        BigDecimal maxAllowed;
+        if ("USDT".equalsIgnoreCase(tradeType)) {
+            double rate = coinService.getUsdtKrwRate();
+            maxAllowed = getTradableUsdtBalance(userId).multiply(BigDecimal.valueOf(rate));
+        } else {
+            maxAllowed = getTradableKrwBalance(userId);
+        }
+        if (investment.compareTo(maxAllowed) > 0) {
+            String label = "USDT".equalsIgnoreCase(tradeType) ? "USDT 원금 한도" : "KRW 원금 한도";
+            throw new RuntimeException("거래 가능 금액을 초과했습니다. (" + label + ": " + maxAllowed.toPlainString() + " KRW)");
+        }
+        if (investment.compareTo(member.getMyCoinBalance()) > 0) {
+            throw new RuntimeException("잔고가 부족합니다.");
         }
 
         // 투자금 선차감

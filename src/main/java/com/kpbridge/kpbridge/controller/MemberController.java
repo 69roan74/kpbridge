@@ -73,6 +73,8 @@ public class MemberController {
             member.setPhone(dto.getPhone());
             member.setEmail(dto.getEmail());
             member.setBirthDate(dto.getBirthDate());
+            member.setBankAccount(dto.getBankAccount());
+            member.setWalletAddress(dto.getWalletAddress());
 
             // 추천인 코드는 inviteCode로 전달 (member의 referralCode는 나의 코드)
             memberService.register(member, dto.getReferralCode());
@@ -171,6 +173,8 @@ public class MemberController {
         existingMember.setUserName(member.getUserName());
         existingMember.setEmail(member.getEmail());
         existingMember.setPhone(member.getPhone());
+        existingMember.setBankAccount(member.getBankAccount());
+        existingMember.setWalletAddress(member.getWalletAddress());
         memberRepository.save(existingMember);
         return "redirect:/mypage";
     }

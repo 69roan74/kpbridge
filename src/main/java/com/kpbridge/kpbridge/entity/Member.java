@@ -54,5 +54,13 @@ public class Member {
     @Column(precision = 18, scale = 8)
     private BigDecimal usdtPrincipal = BigDecimal.ZERO;
 
+    // 출금용 계좌정보 (예: 국민은행 123-456-7890 홍길동)
+    @Column(length = 300)
+    private String bankAccount;
+
+    // 출금용 USDT 지갑주소 (TRC20)
+    @Column(length = 300)
+    private String walletAddress;
+
     private LocalDateTime joinDate = LocalDateTime.now();
 }

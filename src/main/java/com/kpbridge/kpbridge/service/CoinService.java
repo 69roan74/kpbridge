@@ -54,7 +54,7 @@ public class CoinService {
             "KRW-USDT", "https://s2.coinmarketcap.com/static/img/coins/64x64/825.png"
     );
 
-    private static final List<String> TARGET_COINS = List.of("BTC", "ETH", "USDT");
+    private static final List<String> TARGET_COINS = List.of("BTC", "ETH");
 
     /**
      * 통합 API - 거래소 선택 지원 + 5초 캐싱
@@ -90,23 +90,29 @@ public class CoinService {
             return new double[]{btc, eth};
         }, apiExecutor);
 
-        // 두 결과 병합 대기
+        // 실제 USD/KRW 외환 환율도 병렬 호출
+        CompletableFuture<Double> forexFuture = CompletableFuture.supplyAsync(
+                this::fetchForexUsdKrwRate, apiExecutor);
+
+        // 세 결과 병합 대기
         List<Map<String, Object>> domesticData;
-        double globalBtc, globalEth;
+        double globalBtc, globalEth, forexRate;
         try {
-            CompletableFuture.allOf(domesticFuture, foreignFuture).join();
+            CompletableFuture.allOf(domesticFuture, foreignFuture, forexFuture).join();
             domesticData = domesticFuture.get();
             double[] foreignPrices = foreignFuture.get();
             globalBtc = foreignPrices[0];
             globalEth = foreignPrices[1];
+            forexRate = forexFuture.get();
         } catch (Exception e) {
             log.error("병렬 API 호출 실패: {}", e.getMessage());
             domesticData = List.of();
             globalBtc = 0;
             globalEth = 0;
+            forexRate = 1380.0;
         }
 
-        // 환율 추출 (국내 거래소 USDT 가격)
+        // 업비트 USDT 시세 (UI 표시용)
         double exchangeRate = 0;
         for (Map<String, Object> ticker : domesticData) {
             if ("KRW-USDT".equals(ticker.get("market"))) {
@@ -114,6 +120,8 @@ public class CoinService {
                 break;
             }
         }
+        // 외환 환율 fallback
+        if (forexRate <= 0) forexRate = exchangeRate > 0 ? exchangeRate * 0.95 : 1380.0;
 
         Map<String, Double> globalPrices = Map.of(
                 "KRW-BTC", globalBtc,
@@ -128,17 +136,16 @@ public class CoinService {
 
             double domesticPrice = toDouble(ticker.get("trade_price"));
             double kimchiPremium = 0;
-            double buyPriceUsdt = 0;
-            double sellPriceUsdt = 0;
+            double buyPriceKrw = 0;
+            double sellPriceKrw = 0;
 
-            if (!"USDT".equals(symbol) && exchangeRate > 0) {
-                Double globalUsdt = globalPrices.get(market);
-                if (globalUsdt != null && globalUsdt > 0) {
-                    double globalKrw = globalUsdt * exchangeRate;
-                    kimchiPremium = ((domesticPrice - globalKrw) / globalKrw) * 100;
-                    buyPriceUsdt = globalUsdt;
-                    sellPriceUsdt = domesticPrice / exchangeRate;
-                }
+            Double globalUsdt = globalPrices.get(market);
+            if (globalUsdt != null && globalUsdt > 0 && forexRate > 0) {
+                // 김프 계산: 실제 USD/KRW 환율 사용 → 더 정확한 차익 반영
+                double globalKrw = globalUsdt * forexRate;
+                kimchiPremium = ((domesticPrice - globalKrw) / globalKrw) * 100;
+                buyPriceKrw = globalKrw;
+                sellPriceKrw = domesticPrice;
             }
 
             coins.add(CoinPriceDto.builder()
@@ -147,8 +154,8 @@ public class CoinService {
                     .iconUrl(COIN_ICONS.getOrDefault(market, ""))
                     .currentPrice(domesticPrice)
                     .kimchiPremium(kimchiPremium)
-                    .buyPriceUsdt(buyPriceUsdt)
-                    .sellPriceUsdt(sellPriceUsdt)
+                    .buyPriceKrw(buyPriceKrw)
+                    .sellPriceKrw(sellPriceKrw)
                     .build());
         }
 
@@ -334,6 +341,35 @@ public class CoinService {
             if (res != null) return toDouble(res.get("price"));
         } catch (Exception e) {
             log.error("Binance API 호출 실패 ({}): {}", symbol, e.getMessage());
+        }
+        return 0;
+    }
+
+    // ========== 외환 환율 fetch (USD/KRW) ==========
+
+    @SuppressWarnings("unchecked")
+    private double fetchForexUsdKrwRate() {
+        // 1차: ExchangeRate-API (무료, 키 불필요)
+        try {
+            Map<String, Object> res = restTemplate.getForObject(
+                    "https://api.exchangerate-api.com/v4/latest/USD", Map.class);
+            if (res != null && res.get("rates") instanceof Map) {
+                Object krw = ((Map<String, Object>) res.get("rates")).get("KRW");
+                if (krw != null) return toDouble(krw);
+            }
+        } catch (Exception e) {
+            log.warn("ExchangeRate-API 호출 실패, 2차 시도: {}", e.getMessage());
+        }
+        // 2차: Frankfurter (ECB 기준)
+        try {
+            Map<String, Object> res = restTemplate.getForObject(
+                    "https://api.frankfurter.app/latest?from=USD&to=KRW", Map.class);
+            if (res != null && res.get("rates") instanceof Map) {
+                Object krw = ((Map<String, Object>) res.get("rates")).get("KRW");
+                if (krw != null) return toDouble(krw);
+            }
+        } catch (Exception e) {
+            log.warn("Frankfurter API 호출 실패: {}", e.getMessage());
         }
         return 0;
     }

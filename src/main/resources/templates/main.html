@@ -310,14 +310,13 @@
                 <thead>
                     <tr>
                         <th th:text="#{main.table.name}">이름</th>
-                        <th class="num" th:text="#{main.table.price}">현재가</th>
-                        <th class="num" th:text="#{main.table.buy}">매수가격</th>
-                        <th class="num" th:text="#{main.table.sell}">매도가격</th>
+                        <th class="num" th:text="#{main.table.buy}">매수가격 (KRW)</th>
+                        <th class="num" th:text="#{main.table.sell}">매도가격 (KRW)</th>
                         <th class="num" th:text="#{main.table.kimchi}">김프</th>
                     </tr>
                 </thead>
                 <tbody id="coin-table-body">
-                    <tr><td colspan="5" style="text-align:center; padding:40px; color:#999;" th:text="#{main.loading}">시세 로딩 중...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; padding:40px; color:#999;" th:text="#{main.loading}">시세 로딩 중...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -722,14 +721,14 @@
 
             let html = '';
             data.coins.forEach(coin => {
-                const price = Math.round(coin.currentPrice).toLocaleString();
+                if (coin.symbol === 'USDT') return;
                 const premium = coin.kimchiPremium.toFixed(2);
                 const premiumClass = coin.kimchiPremium > 0 ? 'color-red' : (coin.kimchiPremium < 0 ? 'color-blue' : '');
                 const premiumSign = coin.kimchiPremium > 0 ? '+' : '';
-                const premiumText = coin.symbol === 'USDT' ? '-' : premiumSign + premium + '%';
+                const premiumText = premiumSign + premium + '%';
 
-                const buyUsdt = coin.buyPriceUsdt > 0 ? coin.buyPriceUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
-                const sellUsdt = coin.sellPriceUsdt > 0 ? coin.sellPriceUsdt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-';
+                const buyKrw = coin.buyPriceKrw > 0 ? Math.round(coin.buyPriceKrw).toLocaleString() : '-';
+                const sellKrw = coin.sellPriceKrw > 0 ? Math.round(coin.sellPriceKrw).toLocaleString() : '-';
                 const displayName = _lang === 'en' ? (_coinNameEn[coin.symbol] || coin.name) : coin.name;
 
                 html += '<tr>' +
@@ -740,9 +739,8 @@
                             '<span class="ticker">' + coin.symbol + '</span>' +
                         '</div>' +
                     '</div></td>' +
-                    '<td class="num" style="font-weight:700;">' + price + '</td>' +
-                    '<td class="num" style="font-weight:600; color:#555;">' + buyUsdt + '</td>' +
-                    '<td class="num ' + premiumClass + '" style="font-weight:600;">' + sellUsdt + '</td>' +
+                    '<td class="num" style="font-weight:600; color:#555;">' + buyKrw + '</td>' +
+                    '<td class="num ' + premiumClass + '" style="font-weight:600;">' + sellKrw + '</td>' +
                     '<td class="num ' + premiumClass + '" style="font-weight:700;">' + premiumText + '</td>' +
                 '</tr>';
             });

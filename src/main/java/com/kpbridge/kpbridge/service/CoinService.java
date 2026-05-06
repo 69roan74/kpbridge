@@ -139,13 +139,20 @@ public class CoinService {
             double buyPriceKrw = 0;
             double sellPriceKrw = 0;
 
-            Double globalUsdt = globalPrices.get(market);
-            if (globalUsdt != null && globalUsdt > 0 && forexRate > 0) {
-                // 김프 계산: 실제 USD/KRW 환율 사용 → 더 정확한 차익 반영
-                double globalKrw = globalUsdt * forexRate;
-                kimchiPremium = ((domesticPrice - globalKrw) / globalKrw) * 100;
-                buyPriceKrw = globalKrw;
+            if ("USDT".equals(symbol) && forexRate > 0) {
+                // USDT 김프: 업비트 USDT/KRW 가격 vs 실제 USD/KRW 환율
+                kimchiPremium = ((domesticPrice - forexRate) / forexRate) * 100;
+                buyPriceKrw = forexRate;
                 sellPriceKrw = domesticPrice;
+            } else {
+                Double globalUsdt = globalPrices.get(market);
+                if (globalUsdt != null && globalUsdt > 0 && forexRate > 0) {
+                    // 김프 계산: 실제 USD/KRW 환율 사용 → 더 정확한 차익 반영
+                    double globalKrw = globalUsdt * forexRate;
+                    kimchiPremium = ((domesticPrice - globalKrw) / globalKrw) * 100;
+                    buyPriceKrw = globalKrw;
+                    sellPriceKrw = domesticPrice;
+                }
             }
 
             coins.add(CoinPriceDto.builder()

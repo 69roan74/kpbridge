@@ -721,7 +721,6 @@
 
             let html = '';
             data.coins.forEach(coin => {
-                if (coin.symbol === 'USDT') return;
                 const premium = coin.kimchiPremium.toFixed(2);
                 const premiumClass = coin.kimchiPremium > 0 ? 'color-red' : (coin.kimchiPremium < 0 ? 'color-blue' : '');
                 const premiumSign = coin.kimchiPremium > 0 ? '+' : '';

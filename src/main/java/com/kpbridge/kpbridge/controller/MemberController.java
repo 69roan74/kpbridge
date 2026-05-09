@@ -152,10 +152,15 @@ public class MemberController {
         BigDecimal krwP = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
         BigDecimal usdtP = member.getUsdtPrincipal() != null ? member.getUsdtPrincipal() : BigDecimal.ZERO;
         BigDecimal totalPrincipal = krwP.add(usdtP.multiply(BigDecimal.valueOf(usdtRate)));
+        BigDecimal balance = member.getMyCoinBalance() != null ? member.getMyCoinBalance() : BigDecimal.ZERO;
+        BigDecimal profit = balance.subtract(totalPrincipal);
+        if (profit.compareTo(BigDecimal.ZERO) < 0) profit = BigDecimal.ZERO;
+
         model.addAttribute("krwPrincipal", krwP);
         model.addAttribute("usdtPrincipal", usdtP);
         model.addAttribute("totalPrincipal", totalPrincipal);
         model.addAttribute("usdtRate", usdtRate);
+        model.addAttribute("profit", profit);
 
         return "mypage";
     }

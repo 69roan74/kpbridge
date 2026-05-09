@@ -24,6 +24,11 @@
         .login-link { text-align: center; margin-top: 18px; font-size: 14px; color: #666; }
         .login-link a { color: #007bff; text-decoration: none; font-weight: bold; }
         .section-divider { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; margin: 20px 0 12px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .bank-wrap { position: relative; }
+        .bank-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1.5px solid #007bff; border-top: none; border-radius: 0 0 8px 8px; max-height: 160px; overflow-y: auto; z-index: 200; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+        .bank-suggestion-item { padding: 10px 14px; cursor: pointer; font-size: 14px; color: #333; }
+        .bank-suggestion-item:hover { background: #e9f2ff; color: #007bff; }
+        .bank-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 
         @media (max-width: 400px) {
             body { padding: 16px 12px 40px; }
@@ -80,7 +85,15 @@
             <div class="section-divider">출금 정보 <span style="color:#999; font-weight:400;">(선택 — 가입 후에도 수정 가능)</span></div>
             <div class="form-group">
                 <label>출금 계좌 (KRW)</label>
-                <input type="text" name="bankAccount" placeholder="예: 국민은행 123-456-7890 홍길동">
+                <input type="hidden" name="bankAccount" id="bankAccountHidden">
+                <div class="bank-wrap">
+                    <input type="text" id="regBankName" placeholder="은행명 검색 (예: 국민, 카카오)" autocomplete="off">
+                    <div class="bank-suggestions" id="regBankSuggestions"></div>
+                </div>
+                <div class="bank-row">
+                    <input type="text" id="regAccountNumber" placeholder="계좌번호 (숫자/하이픈)" inputmode="numeric">
+                    <input type="text" id="regAccountHolder" placeholder="예금주 이름">
+                </div>
                 <div class="hint">원화 출금 시 사용됩니다</div>
             </div>
             <div class="form-group">
@@ -105,6 +118,48 @@
         </div>
     </div>
     <script>
+        const BANKS = ['국민은행','신한은행','우리은행','하나은행','기업은행','농협은행','SC제일은행','씨티은행','수협은행','산업은행','우체국','카카오뱅크','케이뱅크','토스뱅크','대구은행','부산은행','경남은행','광주은행','전북은행','제주은행','새마을금고','신협','저축은행'];
+
+        function initBankAutocomplete(inputId, listId) {
+            const input = document.getElementById(inputId);
+            const list = document.getElementById(listId);
+            input.addEventListener('input', function() {
+                const val = this.value.trim();
+                list.innerHTML = '';
+                if (!val) { list.style.display = 'none'; return; }
+                const matches = BANKS.filter(b => b.includes(val));
+                if (!matches.length) { list.style.display = 'none'; return; }
+                matches.forEach(bank => {
+                    const item = document.createElement('div');
+                    item.className = 'bank-suggestion-item';
+                    item.textContent = bank;
+                    item.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        input.value = bank;
+                        list.style.display = 'none';
+                    });
+                    list.appendChild(item);
+                });
+                list.style.display = 'block';
+            });
+            input.addEventListener('blur', () => setTimeout(() => list.style.display = 'none', 150));
+        }
+
+        initBankAutocomplete('regBankName', 'regBankSuggestions');
+
+        // 계좌번호 숫자+하이픈만 허용
+        document.getElementById('regAccountNumber').addEventListener('input', function() {
+            this.value = this.value.replace(/[^\d-]/g, '');
+        });
+
+        // 폼 submit 전 합치기
+        document.querySelector('form').addEventListener('submit', function() {
+            const bank = document.getElementById('regBankName').value.trim();
+            const acct = document.getElementById('regAccountNumber').value.trim();
+            const holder = document.getElementById('regAccountHolder').value.trim();
+            document.getElementById('bankAccountHidden').value = [bank, acct, holder].filter(Boolean).join(' ');
+        });
+
         // 전화번호 자동 하이픈
         document.getElementById('phoneInput').addEventListener('input', function(e) {
             let v = e.target.value.replace(/\D/g, '');

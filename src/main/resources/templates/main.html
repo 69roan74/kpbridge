@@ -239,23 +239,41 @@
             </div>
         </div>
 
+        <!-- STATUS 티커: 로그인 시만 표시, 오늘 전체 사용자 거래 로그 -->
         <div class="status-ticker-box" th:if="${user != null}">
             <div class="ticker-label">📢 STATUS</div>
             <div class="ticker-wrapper">
                 <div class="ticker-content">
-                    <th:block th:if="${user != null and !#lists.isEmpty(historyList)}">
-                        <div class="ticker-item" th:each="tx : ${historyList}">
-                            [[${#temporals.format(tx.date, 'MM-dd HH:mm')}]] 
-                            <span th:text="${tx.type}"></span> 
-                            (<span th:text="${tx.status}"></span>) 
+                    <th:block th:if="${!#lists.isEmpty(todayTxList)}">
+                        <div class="ticker-item" th:each="tx : ${todayTxList}">
+                            [[${#temporals.format(tx.date, 'MM-dd HH:mm')}]]
+                            <span th:text="${tx.type}"></span>
+                            (<span th:text="${tx.status}"></span>)
                             - <span th:text="${#numbers.formatDecimal(tx.amount, 1, 'COMMA', 0, 'POINT')} + ' KRW'"></span>
                         </div>
                     </th:block>
-                    <th:block th:if="${user == null or #lists.isEmpty(historyList)}">
-                        <div class="ticker-item" th:text="#{main.ticker.empty}">거래 내역이 없습니다. [거래하기]를 눌러보세요!</div>
-                        <div class="ticker-item" th:text="#{main.ticker.welcome}">🚀 KPBridge에 오신 것을 환영합니다.</div>
+                    <th:block th:if="${#lists.isEmpty(todayTxList)}">
+                        <div class="ticker-item">오늘 거래 내역이 없습니다. 🚀 KPBridge에 오신 것을 환영합니다.</div>
                     </th:block>
                 </div>
+            </div>
+        </div>
+
+        <!-- 풀 진행률: 로그인 시만 표시 -->
+        <div th:if="${user != null}" style="margin: 10px 0 16px; padding: 12px 16px; background:#f0f7ff; border-radius:12px; border:1px solid #d0e8ff;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:13px; font-weight:700; color:#1971c2;">⚡ 거래 풀 진행률</span>
+                <span style="font-size:12px; color:#666;">
+                    <span th:text="${#numbers.formatDecimal(poolCurrent, 1, 'COMMA', 0, 'POINT')}">0</span> /
+                    <span th:text="${#numbers.formatDecimal(poolLimit, 1, 'COMMA', 0, 'POINT')}">0</span> KRW
+                </span>
+            </div>
+            <div style="background:#dee2e6; border-radius:999px; height:10px; overflow:hidden;">
+                <div th:style="'width:' + ${poolPercent} + '%; background:linear-gradient(90deg,#4dabf7,#1971c2); height:100%; border-radius:999px; transition:width 0.5s;'"></div>
+            </div>
+            <div style="font-size:11px; color:#888; margin-top:5px; text-align:right;">
+                목표까지 <span style="color:#1971c2; font-weight:700;"
+                    th:text="${#numbers.formatDecimal(poolLimit.subtract(poolCurrent), 1, 'COMMA', 0, 'POINT')}">0</span> KRW 남음
             </div>
         </div>
 

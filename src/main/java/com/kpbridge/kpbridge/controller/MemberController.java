@@ -17,8 +17,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import com.kpbridge.kpbridge.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Slf4j
@@ -27,6 +30,7 @@ import java.util.Map;
 public class MemberController {
 
     private final MemberRepository memberRepository;
+    private final TransactionRepository transactionRepository;
     private final MemberService memberService;
     private final CoinService coinService;
     private final TransactionService transactionService;
@@ -40,8 +44,21 @@ public class MemberController {
         if (principal != null) {
             Member member = memberRepository.findByUserId(principal.getName()).orElse(null);
             model.addAttribute("user", member);
-            model.addAttribute("historyList", transactionService.getHistory(principal.getName()));
+            // STATUS 티커: 오늘 전체 사용자 거래 로그
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            model.addAttribute("todayTxList", transactionRepository.findTodayAllTransactions(startOfDay));
         }
+
+        // 풀 진행률 (로그인 여부 관계없이 표시)
+        BigDecimal poolLimit = new BigDecimal(siteConfigService.get("pool.limit", "1000000000"));
+        BigDecimal poolCurrent = new BigDecimal(siteConfigService.get("pool.current", "0"));
+        model.addAttribute("poolLimit", poolLimit);
+        model.addAttribute("poolCurrent", poolCurrent);
+        int poolPercent = poolLimit.compareTo(BigDecimal.ZERO) > 0
+                ? poolCurrent.multiply(BigDecimal.valueOf(100)).divide(poolLimit, 0, java.math.RoundingMode.HALF_UP).intValue()
+                : 0;
+        if (poolPercent > 100) poolPercent = 100;
+        model.addAttribute("poolPercent", poolPercent);
 
         try {
             model.addAttribute("btcUpbit", coinService.getUpbitBtc());
@@ -152,6 +169,7 @@ public class MemberController {
         BigDecimal krwP = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
         BigDecimal usdtP = member.getUsdtPrincipal() != null ? member.getUsdtPrincipal() : BigDecimal.ZERO;
         BigDecimal totalPrincipal = krwP.add(usdtP.multiply(BigDecimal.valueOf(usdtRate)));
+        // 출금 가능 수익금 = 현재 잔액 - 원금 (실제 출금 가능한 차익)
         BigDecimal balance = member.getMyCoinBalance() != null ? member.getMyCoinBalance() : BigDecimal.ZERO;
         BigDecimal profit = balance.subtract(totalPrincipal);
         if (profit.compareTo(BigDecimal.ZERO) < 0) profit = BigDecimal.ZERO;

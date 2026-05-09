@@ -110,6 +110,7 @@
         <div class="menu-item" onclick="showSection('referral', this)">🔗 추천 요율 설정</div>
         <div class="menu-item" onclick="showSection('paymentConfig', this)">💳 입금 정보 설정</div>
         <div class="menu-item" onclick="showSection('tradeHours', this)">⏰ 거래 시간 설정</div>
+        <div class="menu-item" onclick="showSection('poolConfig', this)">⚡ 거래 풀 설정</div>
         <div class="menu-item" onclick="showSection('faq', this)">💡 FAQ 관리</div>
         <a href="/admin/chat" class="menu-item" th:style="${totalUnread > 0} ? 'color:white; background:#3d0000;' : ''">
             💬 1:1 채팅
@@ -463,6 +464,27 @@
                             <option th:each="h : ${#numbers.sequence(1,24)}" th:value="${h}"
                                     th:text="${h} + '시'" th:selected="${tradeEndHour == h.toString()}"></option>
                         </select>
+                    </div>
+                    <button type="submit" class="save-btn" style="margin-top:16px;">💾 저장</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 거래 풀 설정 -->
+        <div id="poolConfig" class="section">
+            <h1>⚡ 거래 풀 설정</h1>
+            <div class="table-box" style="max-width: 500px;">
+                <p style="color:#666; font-size:14px; margin-bottom: 20px;">
+                    메인 화면에 표시되는 거래 풀 목표 한도와 현재 모인 원금을 설정합니다.
+                </p>
+                <form th:action="@{/admin/config/pool}" method="post">
+                    <div class="config-form">
+                        <label>목표 한도 (KRW)</label>
+                        <input type="number" name="poolLimit"
+                               th:value="${poolLimit}" class="modal-input" placeholder="예) 1000000000">
+                        <label style="margin-top:14px;">현재 모인 원금 (KRW)</label>
+                        <input type="number" name="poolCurrent"
+                               th:value="${poolCurrent}" class="modal-input" placeholder="예) 350000000">
                     </div>
                     <button type="submit" class="save-btn" style="margin-top:16px;">💾 저장</button>
                 </form>

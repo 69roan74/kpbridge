@@ -2,6 +2,9 @@ package com.kpbridge.kpbridge.repository;
 
 import com.kpbridge.kpbridge.entity.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -21,4 +24,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // 첫 거래 여부 확인 (완료된 거래 주문 존재 여부)
     boolean existsByMemberIdAndTradeStatus(Long memberId, String tradeStatus);
+
+    // 오늘 전체 사용자 거래 로그 (STATUS 티커용)
+    @Query("SELECT t FROM Transaction t WHERE t.date >= :startOfDay ORDER BY t.date DESC")
+    List<Transaction> findTodayAllTransactions(@Param("startOfDay") LocalDateTime startOfDay);
 }

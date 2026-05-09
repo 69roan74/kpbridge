@@ -498,22 +498,22 @@
             <div id="withdrawSection" style="display:none;">
                 <!-- USDT 출금 -->
                 <div id="withdrawUsdt">
-                    <div class="info-label">받을 USDT 지갑 주소 (TRC20)</div>
+                    <div class="info-label">출금 지갑 주소 (TRC20)</div>
                     <div th:if="${member.walletAddress != null and !#strings.isEmpty(member.walletAddress)}" class="info-copy-box">
                         <span class="info-value" id="withdrawWallet" th:text="${member.walletAddress}"></span>
                     </div>
                     <div th:if="${member.walletAddress == null or #strings.isEmpty(member.walletAddress)}" class="info-hint" style="color:#e74c3c;">
-                        ⚠️ 지갑 주소가 등록되지 않았습니다. <a th:href="@{/member/edit}">정보 수정</a>에서 등록해주세요.
+                        ⚠️ 지갑 주소 미등록 — <a th:href="@{/member/edit}" style="color:#e74c3c;">정보 수정</a>에서 등록해주세요.
                     </div>
                 </div>
                 <!-- 원화 출금 -->
                 <div id="withdrawKrw" style="display:none;">
-                    <div class="info-label">출금받을 계좌</div>
+                    <div class="info-label">출금 계좌</div>
                     <div th:if="${member.bankAccount != null and !#strings.isEmpty(member.bankAccount)}" class="info-copy-box">
                         <span class="info-value" id="withdrawBank" th:text="${member.bankAccount}"></span>
                     </div>
                     <div th:if="${member.bankAccount == null or #strings.isEmpty(member.bankAccount)}" class="info-hint" style="color:#e74c3c;">
-                        ⚠️ 출금 계좌가 등록되지 않았습니다. <a th:href="@{/member/edit}">정보 수정</a>에서 등록해주세요.
+                        ⚠️ 출금 계좌 미등록 — <a th:href="@{/member/edit}" style="color:#e74c3c;">정보 수정</a>에서 등록해주세요.
                     </div>
                 </div>
                 <hr class="modal-divider">
@@ -524,8 +524,7 @@
                     </span>
                 </div>
                 <div class="info-label">출금 금액 (KRW 기준)</div>
-                <input type="number" id="withdrawAmount" class="modal-input" placeholder="출금할 금액 입력"
-                       th:max="${profit}">
+                <input type="number" id="withdrawAmount" class="modal-input" placeholder="출금할 금액 입력">
             </div>
 
             <button onclick="submitAction()" class="confirm-btn" id="modalConfirmBtn">신청하기</button>
@@ -577,8 +576,6 @@
             if (type === 'deposit') {
                 document.getElementById('amountInput').value = '';
             } else {
-                document.getElementById('withdrawWallet').value = '';
-                document.getElementById('withdrawBank').value = '';
                 document.getElementById('withdrawAmount').value = '';
             }
             document.getElementById('actionModal').style.display = 'flex';
@@ -619,7 +616,7 @@
                 const amount = document.getElementById('withdrawAmount').value;
                 if (!amount || Number(amount) <= 0) return alert("출금 금액을 올바르게 입력해주세요.");
                 const maxProfit = /*[[${profit}]]*/ 0;
-                if (Number(amount) > maxProfit) return alert("출금 가능한 수익금(" + maxProfit.toLocaleString() + " KRW)을 초과했습니다.");
+                if (Number(amount) > maxProfit) return alert("출금 가능한 수익금(" + Number(maxProfit).toLocaleString() + " KRW)을 초과했습니다.");
                 const destElem = currentMethod === 'usdt'
                     ? document.getElementById('withdrawWallet')
                     : document.getElementById('withdrawBank');

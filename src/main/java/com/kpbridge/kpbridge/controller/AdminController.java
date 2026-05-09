@@ -85,6 +85,10 @@ public class AdminController {
         model.addAttribute("tradeStartHour", siteConfigService.get("trade.start.hour", "9"));
         model.addAttribute("tradeEndHour", siteConfigService.get("trade.end.hour", "18"));
 
+        // 거래 풀 설정
+        model.addAttribute("poolLimit", siteConfigService.get("pool.limit", "1000000000"));
+        model.addAttribute("poolCurrent", siteConfigService.get("pool.current", "0"));
+
         // 입출금 승인 대기 목록
         model.addAttribute("pendingDeposits", transactionService.getPendingDeposits());
         model.addAttribute("pendingWithdraws", transactionService.getPendingWithdraws());
@@ -269,6 +273,14 @@ public class AdminController {
         siteConfigService.set("trade.hours.enabled", enabled);
         siteConfigService.set("trade.start.hour", startHour);
         siteConfigService.set("trade.end.hour", endHour);
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/config/pool")
+    public String savePoolConfig(@RequestParam String poolLimit,
+                                  @RequestParam String poolCurrent) {
+        siteConfigService.set("pool.limit", poolLimit);
+        siteConfigService.set("pool.current", poolCurrent);
         return "redirect:/admin";
     }
 

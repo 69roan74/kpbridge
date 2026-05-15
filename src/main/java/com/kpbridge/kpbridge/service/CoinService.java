@@ -109,7 +109,7 @@ public class CoinService {
             domesticData = List.of();
             globalBtc = 0;
             globalEth = 0;
-            forexRate = 1380.0;
+            forexRate = 0;
         }
 
         // 업비트 USDT 시세 (UI 표시용)
@@ -120,8 +120,8 @@ public class CoinService {
                 break;
             }
         }
-        // 외환 환율 fallback
-        if (forexRate <= 0) forexRate = exchangeRate > 0 ? exchangeRate * 0.95 : 1380.0;
+        // 외환 환율 fallback: 업비트 USDT/KRW 시세를 USD/KRW 대용으로 사용
+        if (forexRate <= 0) forexRate = exchangeRate > 0 ? exchangeRate : 1499.0;
 
         Map<String, Double> globalPrices = Map.of(
                 "KRW-BTC", globalBtc,

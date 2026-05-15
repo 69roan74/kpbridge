@@ -145,7 +145,7 @@ public class TransactionService {
      * tradeType: "KRW" → KRW 원금 한도, "USDT" → USDT 원금(KRW 환산) 한도
      */
     @Transactional
-    public Transaction submitOrder(String userId, String coinType, String route, BigDecimal investment, String tradeType) {
+    public Transaction submitOrder(String userId, String coinType, String route, BigDecimal investment, String tradeType, Double kimchiRate) {
         Member member = memberRepository.findByUserId(userId).orElseThrow();
 
         if (investment.compareTo(BigDecimal.ZERO) <= 0) {
@@ -181,6 +181,7 @@ public class TransactionService {
         tx.setTradeStatus("거래진행중");
         tx.setCoinType(coinType);
         tx.setRoute(route);
+        tx.setKimchiRate(kimchiRate);
         tx.setDate(LocalDateTime.now());
         transactionRepository.save(tx);
 
@@ -197,7 +198,7 @@ public class TransactionService {
         Member member = tx.getMember();
 
         BigDecimal investment = tx.getInvestmentAmount() != null ? tx.getInvestmentAmount() : tx.getAmount();
-        double rate = 0.035 + (Math.random() * 0.015);
+        double rate = tx.getKimchiRate() != null ? Math.abs(tx.getKimchiRate()) : 0.001;
         BigDecimal profit = investment.multiply(BigDecimal.valueOf(rate));
 
         // 투자금 반환 + 수익금 추가

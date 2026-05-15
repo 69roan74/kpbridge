@@ -114,7 +114,18 @@ public class AdminController {
                                @RequestParam(required = false) String walletAddress) {
         Member member = memberRepository.findById(id).orElseThrow();
         member.setUserName(userName);
+
+        BigDecimal prevBalance = member.getMyCoinBalance() != null ? member.getMyCoinBalance() : BigDecimal.ZERO;
+        BigDecimal diff = balance.subtract(prevBalance);
         member.setMyCoinBalance(balance);
+        if (diff.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal prevKrw = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
+            member.setKrwPrincipal(prevKrw.add(diff));
+        } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
+            BigDecimal prevKrw = member.getKrwPrincipal() != null ? member.getKrwPrincipal() : BigDecimal.ZERO;
+            member.setKrwPrincipal(prevKrw.add(diff).max(BigDecimal.ZERO));
+        }
+
         member.setRole(role);
         member.setRank(rank);
         member.setBankAccount(bankAccount);

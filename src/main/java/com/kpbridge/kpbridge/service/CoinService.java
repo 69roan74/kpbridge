@@ -367,23 +367,16 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("Dunamu 환율 API 실패: {}", e.getMessage());
         }
-        // 2차: Yahoo Finance (공식 은행간 USD/KRW 환율)
+        // 2차: fxratesapi.com (공식 은행간 환율, 인증 불필요)
         try {
-            @SuppressWarnings("unchecked")
             Map<String, Object> res = restTemplate.getForObject(
-                    "https://query1.finance.yahoo.com/v7/finance/quote?symbols=USDKRW%3DX", Map.class);
-            if (res != null) {
-                Map<String, Object> quoteResponse = (Map<String, Object>) res.get("quoteResponse");
-                if (quoteResponse != null) {
-                    List<Map<String, Object>> result2 = (List<Map<String, Object>>) quoteResponse.get("result");
-                    if (result2 != null && !result2.isEmpty()) {
-                        Object price = result2.get(0).get("regularMarketPrice");
-                        if (price != null) { log.info("환율 소스: Yahoo Finance = {}", price); return toDouble(price); }
-                    }
-                }
+                    "https://api.fxratesapi.com/latest?base=USD&currencies=KRW", Map.class);
+            if (res != null && res.get("rates") instanceof Map) {
+                Object krw = ((Map<String, Object>) res.get("rates")).get("KRW");
+                if (krw != null) { log.info("환율 소스: fxratesapi = {}", krw); return toDouble(krw); }
             }
         } catch (Exception e) {
-            log.warn("Yahoo Finance 환율 API 실패: {}", e.getMessage());
+            log.warn("fxratesapi 환율 API 실패: {}", e.getMessage());
         }
         // 3차: jsDelivr CDN
         try {

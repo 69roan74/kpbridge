@@ -5,6 +5,7 @@ import com.kpbridge.kpbridge.dto.PriceResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,6 +26,9 @@ public class CoinService {
 
     // 비동기 외부 API 호출용 스레드풀
     private final ExecutorService apiExecutor = Executors.newFixedThreadPool(6);
+
+    // 환율 60초마다 갱신 (5초마다 호출 시 무료 API 한도 초과 방지)
+    private volatile double cachedForexRate = 1497.0;
 
     // --- 국내 거래소 URL ---
     private static final String UPBIT_TICKER_URL =
@@ -90,27 +94,22 @@ public class CoinService {
             return new double[]{btc, eth};
         }, apiExecutor);
 
-        // 실제 USD/KRW 외환 환율도 병렬 호출
-        CompletableFuture<Double> forexFuture = CompletableFuture.supplyAsync(
-                this::fetchForexUsdKrwRate, apiExecutor);
-
         // 세 결과 병합 대기
         List<Map<String, Object>> domesticData;
-        double globalBtc, globalEth, forexRate;
+        double globalBtc, globalEth;
         try {
-            CompletableFuture.allOf(domesticFuture, foreignFuture, forexFuture).join();
+            CompletableFuture.allOf(domesticFuture, foreignFuture).join();
             domesticData = domesticFuture.get();
             double[] foreignPrices = foreignFuture.get();
             globalBtc = foreignPrices[0];
             globalEth = foreignPrices[1];
-            forexRate = forexFuture.get();
         } catch (Exception e) {
             log.error("병렬 API 호출 실패: {}", e.getMessage());
             domesticData = List.of();
             globalBtc = 0;
             globalEth = 0;
-            forexRate = 0;
         }
+        double forexRate = cachedForexRate;
 
         // 업비트 USDT 시세 (UI 표시용)
         double exchangeRate = 0;
@@ -353,6 +352,15 @@ public class CoinService {
     }
 
     // ========== 외환 환율 fetch (USD/KRW) ==========
+
+    @Scheduled(fixedRate = 60000, initialDelay = 0)
+    public void refreshForexRate() {
+        double rate = fetchForexUsdKrwRate();
+        if (rate > 1000) {
+            cachedForexRate = rate;
+            log.info("환율 갱신 완료: {} KRW/USD", rate);
+        }
+    }
 
     @SuppressWarnings("unchecked")
     private double fetchForexUsdKrwRate() {

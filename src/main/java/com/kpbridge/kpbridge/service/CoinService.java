@@ -375,7 +375,18 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("Dunamu 환율 API 실패: {}", e.getMessage());
         }
-        // 2차: fxratesapi.com (공식 은행간 환율, 인증 불필요)
+        // 2차: Naver Stock API (한도 없음, 공식 은행간 환율)
+        try {
+            Map<String, Object> res = restTemplate.getForObject(
+                    "https://api.stock.naver.com/forex/recent?reutersCode=FX_USDKRW", Map.class);
+            if (res != null && res.get("rate") != null) {
+                double rate = toDouble(res.get("rate"));
+                if (rate > 1000) { log.info("환율 소스: Naver = {}", rate); return rate; }
+            }
+        } catch (Exception e) {
+            log.warn("Naver 환율 API 실패: {}", e.getMessage());
+        }
+        // 3차: fxratesapi.com
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://api.fxratesapi.com/latest?base=USD&currencies=KRW", Map.class);
@@ -386,7 +397,7 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("fxratesapi 환율 API 실패: {}", e.getMessage());
         }
-        // 3차: jsDelivr CDN
+        // 4차: jsDelivr CDN
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json", Map.class);

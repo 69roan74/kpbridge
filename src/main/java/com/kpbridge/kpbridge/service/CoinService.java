@@ -353,7 +353,7 @@ public class CoinService {
 
     // ========== 외환 환율 fetch (USD/KRW) ==========
 
-    @Scheduled(fixedRate = 60000, initialDelay = 0)
+    @Scheduled(fixedRate = 180000, initialDelay = 0)
     public void refreshForexRate() {
         double rate = fetchForexUsdKrwRate();
         if (rate > 1000) {

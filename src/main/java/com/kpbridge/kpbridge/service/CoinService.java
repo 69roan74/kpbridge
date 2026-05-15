@@ -375,18 +375,33 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("Dunamu 환율 API 실패: {}", e.getMessage());
         }
-        // 2차: Naver Stock API (한도 없음, 공식 은행간 환율)
+        // 2차: Coinbase (인증 불필요, 한도 없음)
         try {
             Map<String, Object> res = restTemplate.getForObject(
-                    "https://api.stock.naver.com/forex/recent?reutersCode=FX_USDKRW", Map.class);
-            if (res != null && res.get("rate") != null) {
-                double rate = toDouble(res.get("rate"));
-                if (rate > 1000) { log.info("환율 소스: Naver = {}", rate); return rate; }
+                    "https://api.coinbase.com/v2/exchange-rates?currency=USD", Map.class);
+            if (res != null && res.get("data") instanceof Map) {
+                Map<String, Object> data = (Map<String, Object>) res.get("data");
+                if (data.get("rates") instanceof Map) {
+                    Object krw = ((Map<String, Object>) data.get("rates")).get("KRW");
+                    if (krw != null) { double r = toDouble(krw); if (r > 1000) { log.info("환율 소스: Coinbase = {}", r); return r; } }
+                }
             }
         } catch (Exception e) {
-            log.warn("Naver 환율 API 실패: {}", e.getMessage());
+            log.warn("Coinbase 환율 API 실패: {}", e.getMessage());
         }
-        // 3차: fxratesapi.com
+        // 3차: Wise (공식 은행간 환율)
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> res = restTemplate.getForObject(
+                    "https://api.wise.com/v1/rates?source=USD&target=KRW", List.class);
+            if (res != null && !res.isEmpty()) {
+                Object rate = res.get(0).get("rate");
+                if (rate != null) { double r = toDouble(rate); if (r > 1000) { log.info("환율 소스: Wise = {}", r); return r; } }
+            }
+        } catch (Exception e) {
+            log.warn("Wise 환율 API 실패: {}", e.getMessage());
+        }
+        // 4차: fxratesapi.com
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://api.fxratesapi.com/latest?base=USD&currencies=KRW", Map.class);

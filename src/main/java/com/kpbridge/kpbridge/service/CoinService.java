@@ -367,7 +367,25 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("Dunamu 환율 API 실패: {}", e.getMessage());
         }
-        // 2차: jsDelivr CDN (fawazahmed0 currency API - CDN이라 방화벽 우회 가능)
+        // 2차: Yahoo Finance (공식 은행간 USD/KRW 환율)
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> res = restTemplate.getForObject(
+                    "https://query1.finance.yahoo.com/v7/finance/quote?symbols=USDKRW%3DX", Map.class);
+            if (res != null) {
+                Map<String, Object> quoteResponse = (Map<String, Object>) res.get("quoteResponse");
+                if (quoteResponse != null) {
+                    List<Map<String, Object>> result2 = (List<Map<String, Object>>) quoteResponse.get("result");
+                    if (result2 != null && !result2.isEmpty()) {
+                        Object price = result2.get(0).get("regularMarketPrice");
+                        if (price != null) { log.info("환율 소스: Yahoo Finance = {}", price); return toDouble(price); }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Yahoo Finance 환율 API 실패: {}", e.getMessage());
+        }
+        // 3차: jsDelivr CDN
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json", Map.class);
@@ -378,7 +396,7 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("jsDelivr 환율 API 실패: {}", e.getMessage());
         }
-        // 3차: open.er-api.com
+        // 4차: open.er-api.com
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://open.er-api.com/v6/latest/USD", Map.class);
@@ -389,7 +407,7 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("open.er-api 호출 실패: {}", e.getMessage());
         }
-        // 4차: ExchangeRate-API
+        // 5차: ExchangeRate-API
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://api.exchangerate-api.com/v4/latest/USD", Map.class);
@@ -400,7 +418,7 @@ public class CoinService {
         } catch (Exception e) {
             log.warn("ExchangeRate-API 호출 실패: {}", e.getMessage());
         }
-        // 5차: Frankfurter (ECB 기준)
+        // 6차: Frankfurter (ECB 기준)
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://api.frankfurter.app/latest?from=USD&to=KRW", Map.class);

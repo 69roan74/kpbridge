@@ -691,7 +691,7 @@
         fetch('/api/trans/trade', {
             method: 'POST',
             headers: getCsrfHeaders(),
-            body: JSON.stringify({ coin: coin, route: route, amount: amountKrw, tradeType: _tradeUnit })
+            body: JSON.stringify({ coin: coin, route: route, amount: amountKrw, tradeType: _tradeUnit, kimchiRate: _kimp !== null ? _kimp / 100 : null })
         }).then(res => {
             if (res.ok) {
                 alert(_i18n.successLine1 + '\n\n' + _i18n.successLine2);

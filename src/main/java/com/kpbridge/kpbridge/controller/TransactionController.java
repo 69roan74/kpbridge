@@ -89,7 +89,8 @@ public class TransactionController {
             String tradeType = String.valueOf(req.getOrDefault("tradeType", "KRW"));
             BigDecimal amount = new BigDecimal(String.valueOf(req.get("amount")).replace(",", ""));
 
-            Transaction tx = transactionService.submitOrder(principal.getName(), coin, route, amount, tradeType);
+            Double kimchiRate = req.get("kimchiRate") != null ? Double.valueOf(String.valueOf(req.get("kimchiRate"))) : null;
+            Transaction tx = transactionService.submitOrder(principal.getName(), coin, route, amount, tradeType, kimchiRate);
 
             String chatMsg = String.format(
                 "📋 거래 주문이 접수되었습니다.\n\n코인: %s\n경로: %s\n금액: %,d KRW (%s)\n\n담당자 확인 후 거래를 진행합니다.",

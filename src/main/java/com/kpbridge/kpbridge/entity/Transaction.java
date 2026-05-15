@@ -41,6 +41,9 @@ public class Transaction {
     // 원래 투자 금액 (거래 완료/취소 시 환원용)
     private BigDecimal investmentAmount;
 
+    // 주문 당시 김프 (수익 계산용, 예: 0.0017 = 0.17%)
+    private Double kimchiRate;
+
     // 출금처 정보 (출금 신청 시 사용자가 입력한 지갑 주소 또는 은행 계좌)
     @Column(length = 500)
     private String memo;

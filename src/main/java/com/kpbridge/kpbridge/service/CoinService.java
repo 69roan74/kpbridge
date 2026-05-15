@@ -356,7 +356,18 @@ public class CoinService {
 
     @SuppressWarnings("unchecked")
     private double fetchForexUsdKrwRate() {
-        // 1차: ExchangeRate-API (무료, 키 불필요)
+        // 1차: Dunamu (업비트 모회사) - kimpga와 동일한 환율 소스
+        try {
+            List<Map<String, Object>> res = restTemplate.getForObject(
+                    "https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD", List.class);
+            if (res != null && !res.isEmpty()) {
+                Object rate = res.get(0).get("basePrice");
+                if (rate != null) return toDouble(rate);
+            }
+        } catch (Exception e) {
+            log.warn("Dunamu 환율 API 호출 실패, 2차 시도: {}", e.getMessage());
+        }
+        // 2차: ExchangeRate-API
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://api.exchangerate-api.com/v4/latest/USD", Map.class);
@@ -365,9 +376,9 @@ public class CoinService {
                 if (krw != null) return toDouble(krw);
             }
         } catch (Exception e) {
-            log.warn("ExchangeRate-API 호출 실패, 2차 시도: {}", e.getMessage());
+            log.warn("ExchangeRate-API 호출 실패, 3차 시도: {}", e.getMessage());
         }
-        // 2차: Frankfurter (ECB 기준)
+        // 3차: Frankfurter (ECB 기준)
         try {
             Map<String, Object> res = restTemplate.getForObject(
                     "https://api.frankfurter.app/latest?from=USD&to=KRW", Map.class);
